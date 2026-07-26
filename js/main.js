@@ -135,7 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderSymbolsGrid(e.target.value);
   });
 
-  // Funções Auxiliares para Salvamento
+  // Funções Auxiliares para Salvamento com File System Access API
   async function saveWithSystemDialog(blob, defaultName, types) {
     if ('showSaveFilePicker' in window) {
       try {
@@ -158,6 +158,73 @@ document.addEventListener('DOMContentLoaded', () => {
     a.download = defaultName;
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  // Função para exportar PNG do Bounding Box completo de todos os elementos
+  function exportFullCanvasToBlob() {
+    return new Promise((resolve) => {
+      const elements = canvasMgr.elements;
+
+      if (!elements || elements.length === 0) {
+        alert('Não há elementos no diagrama para exportar.');
+        return resolve(null);
+      }
+
+      // Calcula os limites cartesianos absolutos (Bounding Box) de todos os elementos
+      let minX = Infinity;
+      let minY = Infinity;
+      let maxX = -Infinity;
+      let maxY = -Infinity;
+
+      elements.forEach(el => {
+        if (['line', 'arrow'].includes(el.type)) {
+          const waypoints = ShapeRenderer.getLineWaypoints(el, elements);
+          waypoints.forEach(pt => {
+            if (pt.x < minX) minX = pt.x;
+            if (pt.y < minY) minY = pt.y;
+            if (pt.x > maxX) maxX = pt.x;
+            if (pt.y > maxY) maxY = pt.y;
+          });
+        } else {
+          if (el.x < minX) minX = el.x;
+          if (el.y < minY) minY = el.y;
+          if (el.x + el.width > maxX) maxX = el.x + el.width;
+          if (el.y + el.height > maxY) maxY = el.y + el.height;
+        }
+      });
+
+      const padding = 40; // Margem interna em pixels em volta da imagem
+      const width = Math.max(maxX - minX + padding * 2, 200);
+      const height = Math.max(maxY - minY + padding * 2, 200);
+
+      // Cria canvas invisível em memória
+      const offCanvas = document.createElement('canvas');
+      offCanvas.width = width;
+      offCanvas.height = height;
+
+      const ctx = offCanvas.getContext('2d');
+      const rc = rough.canvas(offCanvas);
+
+      // Preenche com o fundo escuro do tema
+      ctx.fillStyle = '#020617';
+      ctx.fillRect(0, 0, width, height);
+
+      // Aplica a translação para centralizar com a margem (padding)
+      ctx.save();
+      ctx.translate(-minX + padding, -minY + padding);
+
+      // Renderiza cada elemento de forma limpa (sem seleção ativa)
+      elements.forEach(shape => {
+        const cleanShape = { ...shape, selected: false };
+        ShapeRenderer.draw(rc, ctx, cleanShape, elements);
+      });
+
+      ctx.restore();
+
+      offCanvas.toBlob((blob) => {
+        resolve(blob);
+      }, 'image/png');
+    });
   }
 
   // Importar Projeto
@@ -262,16 +329,16 @@ document.addEventListener('DOMContentLoaded', () => {
     ]);
   });
 
+  // Baixar Imagem (PNG) calculando o Bounding Box de todos os elementos
   document.getElementById('btn-download-img').addEventListener('click', async () => {
-    html2canvas(document.getElementById('workspace')).then(async canvas => {
-      canvas.toBlob(async (blob) => {
-        await saveWithSystemDialog(blob, 'devflow-diagram.png', [
-          {
-            description: 'PNG Image',
-            accept: { 'image/png': ['.png'] }
-          }
-        ]);
-      });
-    });
+    const imageBlob = await exportFullCanvasToBlob();
+    if (imageBlob) {
+      await saveWithSystemDialog(imageBlob, 'devflow-diagram.png', [
+        {
+          description: 'PNG Image',
+          accept: { 'image/png': ['.png'] }
+        }
+      ]);
+    }
   });
 });
