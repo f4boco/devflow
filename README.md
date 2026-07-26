@@ -30,18 +30,34 @@
 * **Lucide Icons** — Iconografia SVG otimizada.
 * **HTML2Canvas** — Geração de snapshots para exportação de imagem.
 
-## 🚀 Como Executar o Projeto
+## 📸 Demonstração Visual
 
-Como o DevFlow não possui backend, a instalação é instantânea. Não é necessário Node.js ou ferramentas de build complexas.
+### 📌 1. Fluxogramas de Sistemas em Ação
 
-1. Clone este repositório:
-   ```bash
-   git clone [https://github.com/f4boco/devflow.git](https://github.com/f4boco/devflow.git)
-2. Acesse a pasta do projeto:
-    ```bash
-    cd devflow
-    ```
-3. Abra o arquivo `index.html` em qualquer navegador web moderno e comece a diagramar!
+| 1 | 2 | 3 |
+| :---: | :---: | :---: |
+| <img src="assets/demo-flowchart-auth.png" width="100%" alt="Fluxograma Auth OAuth2"> | <img src="assets/demo-flowchart-payment.png" width="100%" alt="Algoritmo de Pagamentos"> | <img src="assets/demo-flowchart-architecture.png" width="100%" alt="Arquitetura Microserviços"> |
+---
+
+### 🛠️ 2. Ferramentas Principais
+
+| **⚡ Reconhecimento Inteligente (Smart Draw) & Caneta Livre**| **📚 Biblioteca de Símbolos ISO com Preview Vetorial em Tempo Real** |
+| :---: | :---: |
+| Rabisque qualquer forma à mão na tela e a inteligência do editor converte automaticamente para a forma geométrica ISO correspondente, mantendo o traço *hand-drawn*. ![Smart Draw & Caneta Livre](assets/demo-smart-draw.gif) | Acesso a mais de 30 símbolos da norma ISO para algoritmos e arquitetura de dados, com campo de busca rápida e mini-canvas de pré-visualização. ![Biblioteca de Símbolos](assets/demo-symbol-library.png) |
+
+---
+
+#### 🧲 Conectores Magnéticos Dobráveis & Edição com Alinhamento de Texto
+Setas inteligentes que calculam automaticamente a borda das formas e permitem criar novos vértices (dobras) apenas clicando e arrastando. Além disso, conta com minibar de formatação de texto (Esquerda, Centro, Direita).
+
+![Conectores e Alinhamento de Texto](assets/demo-connectors-text.gif)
+
+---
+
+### 📤 3. Central de Exportação
+
+Possibilidades de exportação: em *ASCII*, *Image* e *Arquivo editável*.
+<img src="assets/demo-flowchart-export.png" width="100%" alt="Modal de Exportação ASCII">
 
 ## ⌨️ Atalhos de Teclado
 
@@ -58,6 +74,19 @@ Como o DevFlow não possui backend, a instalação é instantânea. Não é nece
 | <kbd>Delete</kbd> ou <kbd>Backspace</kbd> | Excluir elemento selecionado |
 | <kbd>Enter</kbd> (no editor) | Salvar texto e fechar edição |
 | <kbd>Shift</kbd> + <kbd>Enter</kbd> | Quebrar linha dentro do texto |
+
+## 🚀 Como Executar o Projeto
+
+Como o DevFlow não possui backend, a instalação é instantânea. Não é necessário Node.js ou ferramentas de build complexas.
+
+1. Clone este repositório:
+   ```bash
+   git clone [https://github.com/f4boco/devflow.git](https://github.com/f4boco/devflow.git)
+2. Acesse a pasta do projeto:
+    ```bash
+    cd devflow
+    ```
+3. Abra o arquivo `index.html` em qualquer navegador web moderno e comece a diagramar!
 
 ## 📄 Licença
 
