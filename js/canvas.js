@@ -195,7 +195,6 @@ class CanvasManager {
     }, { passive: false });
   }
 
-  // Mapeamento de Eventos de Toque em Dispositivos Móveis
   setupTouchEvents() {
     const getTouchPos = (e) => {
       const touch = e.touches[0] || e.changedTouches[0];
@@ -348,7 +347,7 @@ class CanvasManager {
       width: 10,
       height: 10,
       text: '',
-      textAlign: 'center',
+      textAlign: this.currentTool === 'text' ? 'left' : 'center',
       waypoints: [],
       startConnectedTo: startShape ? startShape.id : null,
       endConnectedTo: null
@@ -614,7 +613,9 @@ class CanvasManager {
     const editor = document.getElementById('text-editor');
     const alignBtns = document.querySelectorAll('.align-btn');
 
-    if (!shape.textAlign) shape.textAlign = 'center';
+    if (!shape.textAlign) {
+      shape.textAlign = shape.type === 'text' ? 'left' : 'center';
+    }
 
     const updateAlignButtons = (currentAlign) => {
       alignBtns.forEach(btn => {
@@ -678,8 +679,8 @@ class CanvasManager {
         if (w > maxLineWidth) maxLineWidth = w;
       });
 
-      shape.width = Math.max(shape.width, maxLineWidth + 40);
-      shape.height = Math.max(shape.height, lines.length * 20 + 30);
+      shape.width = Math.max(shape.width, maxLineWidth + 20);
+      shape.height = Math.max(shape.height, lines.length * 20 + 20);
 
       container.classList.add('hidden');
       Storage.save(this.elements);

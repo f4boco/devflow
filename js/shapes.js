@@ -1,4 +1,4 @@
-// Renderização das formas Hand-Drawn via Rough.js com Suporte a Zoom e Alinhamento
+// Renderização das formas Hand-Drawn via Rough.js com Suporte a Zoom, Alinhamento, Texto Livre e Preview
 const ShapeRenderer = {
   draw(rc, ctx, shape, elements = []) {
     const options = {
@@ -41,11 +41,15 @@ const ShapeRenderer = {
           options
         );
       }
+    } else if (type === 'text') {
+      // Texto Livre PURAMENTE transparente — não desenha nenhuma forma geométrica ou borda por trás
     } else {
       switch (type) {
         case 'start-end':
         case 'terminator':
         case 'terminal':
+        case 'initialization':
+        case 'finalization':
           const radius = Math.min(Math.abs(h) / 2, Math.abs(w) / 2);
           rc.path(`M ${x + radius} ${y} L ${x + w - radius} ${y} A ${radius} ${radius} 0 0 1 ${x + w - radius} ${y + h} L ${x + radius} ${y + h} A ${radius} ${radius} 0 0 1 ${x + radius} ${y}`, options);
           break;
@@ -63,8 +67,9 @@ const ShapeRenderer = {
 
         case 'parallel-process':
         case 'synchronization':
-          rc.line(x, y + 4, x + w, y + 4, options);
-          rc.line(x, y + h - 4, x + w, y + h - 4, options);
+          rc.rectangle(x, y + 6, w, h - 12, options);
+          rc.line(x, y, x + w, y, options);
+          rc.line(x, y + h, x + w, y + h, options);
           break;
 
         case 'condition':
@@ -75,12 +80,12 @@ const ShapeRenderer = {
         case 'input-output':
         case 'data-flow':
           const ioOffset = 15;
-          rc.polygon([[x + ioOffset, y], [x + w], [x + w - ioOffset, y + h], [x, y + h]], options);
+          rc.polygon([[x + ioOffset, y], [x + w, y], [x + w - ioOffset, y + h], [x, y + h]], options);
           break;
 
         case 'manual-input':
         case 'keyboard-input':
-          rc.polygon([[x, y + 10], [x + w, y], [x + w, y + h], [x, y + h]], options);
+          rc.polygon([[x, y + 12], [x + w, y], [x + w, y + h], [x, y + h]], options);
           break;
 
         case 'manual-operation':
@@ -99,8 +104,8 @@ const ShapeRenderer = {
           break;
 
         case 'multi-document':
-          rc.path(`M ${x + 8} ${y + 8} L ${x + w + 8} ${y + 8} L ${x + w + 8} ${y + h - 2} Z`, options);
-          rc.path(`M ${x} ${y} L ${x + w} ${y} L ${x + w} ${y + h - 10} Q ${x + w * 0.75} ${y + h + 5}, ${x + w * 0.5} ${y + h - 5} T ${x} ${y + h - 5} Z`, options);
+          rc.path(`M ${x + 8} ${y + 8} L ${x + w} ${y + 8} L ${x + w} ${y + h - 2} L ${x + 8} ${y + h - 2} Z`, options);
+          rc.path(`M ${x} ${y} L ${x + w - 8} ${y} L ${x + w - 8} ${y + h - 10} Q ${x + (w - 8) * 0.75} ${y + h + 5}, ${x + (w - 8) * 0.5} ${y + h - 5} T ${x} ${y + h - 5} Z`, options);
           break;
 
         case 'display':
@@ -121,8 +126,8 @@ const ShapeRenderer = {
         case 'internal-memory':
         case 'file':
           rc.rectangle(x, y, w, h, options);
-          rc.line(x + 10, y, x + 10, y + h, options);
-          rc.line(x, y + 10, x + w, y + 10, options);
+          rc.line(x + 12, y, x + 12, y + h, options);
+          rc.line(x, y + 12, x + w, y + 12, options);
           break;
 
         case 'magnetic-disk':
@@ -131,10 +136,10 @@ const ShapeRenderer = {
           break;
 
         case 'magnetic-drum':
-          rc.ellipse(x + 10, y + h / 2, 20, h, options);
-          rc.line(x + 10, y, x + w - 10, y, options);
-          rc.line(x + 10, y + h, x + w - 10, y + h, options);
-          rc.path(`M ${x + w - 10} ${y} A 10 ${h / 2} 0 0 1 ${x + w - 10} ${y + h}`, options);
+          rc.ellipse(x + 12, y + h / 2, 24, h, options);
+          rc.line(x + 12, y, x + w - 12, y, options);
+          rc.line(x + 12, y + h, x + w - 12, y + h, options);
+          rc.path(`M ${x + w - 12} ${y} A 12 ${h / 2} 0 0 1 ${x + w - 12} ${y + h}`, options);
           break;
 
         case 'magnetic-tape':
@@ -144,7 +149,7 @@ const ShapeRenderer = {
           break;
 
         case 'punched-card':
-          rc.polygon([[x + 15, y], [x + w], [x + w, y + h], [x, y + h], [x, y + 15]], options);
+          rc.polygon([[x + 15, y], [x + w, y], [x + w, y + h], [x, y + h], [x, y + 15]], options);
           break;
 
         case 'punched-tape':
@@ -152,8 +157,11 @@ const ShapeRenderer = {
           break;
 
         case 'merge':
-        case 'extract':
           rc.polygon([[x, y], [x + w, y], [x + w / 2, y + h]], options);
+          break;
+
+        case 'extract':
+          rc.polygon([[x + w / 2, y], [x + w, y + h], [x, y + h]], options);
           break;
 
         case 'sort':
@@ -162,7 +170,7 @@ const ShapeRenderer = {
           break;
 
         case 'collate':
-          rc.polygon([[x, y], [x + w], [x, y + h], [x + w, y + h]], options);
+          rc.polygon([[x, y], [x + w, y], [x, y + h], [x + w, y + h]], options);
           break;
 
         case 'delay':
@@ -189,7 +197,7 @@ const ShapeRenderer = {
         case 'network-interface':
         case 'communication':
         case 'data-transmission':
-          rc.polygon([[x, y + h / 2], [x + w * 0.4, y], [x + w * 0.4, y + h * 0.3], [x + w, y + h * 0.3], [x + w, y + h * 0.7], [x + w * 0.4, y + h * 0.7], [x + w * 0.4, y + h]], options);
+          rc.polygon([[x, y + h / 2], [x + w * 0.3, y], [x + w * 0.3, y + h * 0.35], [x + w, y + h * 0.35], [x + w, y + h * 0.65], [x + w * 0.3, y + h * 0.65], [x + w * 0.3, y + h]], options);
           break;
 
         case 'pencil':
@@ -200,15 +208,20 @@ const ShapeRenderer = {
             rc.curve(scaledPoints, options);
           }
           break;
+
+        default:
+          rc.rectangle(x, y, w, h, options);
+          break;
       }
     }
 
+    // Renderiza o Texto sem bordas
     if (text) {
       ctx.font = '14px monospace';
-      ctx.fillStyle = '#64748b';
+      ctx.fillStyle = type === 'text' ? '#10b981' : '#64748b'; // Verde emerald para texto livre
       ctx.textBaseline = 'middle';
       
-      const align = shape.textAlign || 'center';
+      const align = shape.textAlign || (type === 'text' ? 'left' : 'center');
       ctx.textAlign = align;
 
       const lines = text.split('\n');
@@ -217,9 +230,9 @@ const ShapeRenderer = {
 
       let textX = x + w / 2;
       if (align === 'left') {
-        textX = x + 15;
+        textX = type === 'text' ? x : x + 15;
       } else if (align === 'right') {
-        textX = x + w - 15;
+        textX = type === 'text' ? x + w : x + w - 15;
       }
 
       lines.forEach((line, index) => {

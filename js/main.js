@@ -6,12 +6,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const flowchartSymbols = [
     { id: 'start-end', name: 'Terminador (Início/Fim)' },
     { id: 'process', name: 'Processo' },
-    { id: 'predefined-process', name: 'Processo Predefinido (Subprocesso)' },
-    { id: 'condition', name: 'Decisão' },
-    { id: 'input-output', name: 'Entrada/Saída (I/O)' },
+    { id: 'predefined-process', name: 'Processo Predefinido' },
+    { id: 'condition', name: 'Decisão / Condição' },
+    { id: 'input-output', name: 'Entrada / Saída (I/O)' },
     { id: 'manual-input', name: 'Entrada Manual' },
     { id: 'manual-operation', name: 'Operação Manual' },
-    { id: 'preparation', name: 'Preparação' },
+    { id: 'preparation', name: 'Preparação / Loop' },
     { id: 'document', name: 'Documento' },
     { id: 'multi-document', name: 'Múltiplos Documentos' },
     { id: 'display', name: 'Display (Tela)' },
@@ -25,35 +25,16 @@ document.addEventListener('DOMContentLoaded', () => {
     { id: 'punched-card', name: 'Cartão Perfurado' },
     { id: 'punched-tape', name: 'Fita Perfurada' },
     { id: 'merge', name: 'Junção (Merge)' },
+    { id: 'extract', name: 'Extração' },
     { id: 'sort', name: 'Classificação (Sort)' },
     { id: 'collate', name: 'Agrupamento (Collate)' },
     { id: 'delay', name: 'Atraso (Delay)' },
-    { id: 'wait', name: 'Espera' },
-    { id: 'on-page-connector', name: 'Conector na Mesma Página' },
+    { id: 'on-page-connector', name: 'Conector na Página' },
     { id: 'off-page-connector', name: 'Conector Fora da Página' },
     { id: 'line', name: 'Linha de Fluxo' },
-    { id: 'data-flow', name: 'Fluxo de Dados' },
-    { id: 'communication', name: 'Comunicação' },
-    { id: 'data-transmission', name: 'Transmissão de Dados' },
-    { id: 'comment', name: 'Comentário' },
-    { id: 'annotation', name: 'Anotação' },
-    { id: 'routine-call', name: 'Chamada de Rotina' },
-    { id: 'parallel-process', name: 'Processo Paralelo' },
-    { id: 'extract', name: 'Extração' },
-    { id: 'sequential-storage', name: 'Armazenamento Sequencial' },
-    { id: 'direct-access-storage', name: 'Armazenamento de Acesso Direto' },
-    { id: 'keyboard-input', name: 'Entrada por Teclado' },
-    { id: 'screen-display', name: 'Exibição em Monitor' },
-    { id: 'print', name: 'Impressão' },
-    { id: 'printed-output', name: 'Saída Impressa' },
-    { id: 'network-interface', name: 'Interface de Rede' },
-    { id: 'terminal', name: 'Terminal' },
-    { id: 'logical-connector', name: 'Conector Lógico' },
-    { id: 'inspection-point', name: 'Ponto de Inspeção' },
-    { id: 'synchronization', name: 'Sincronização' },
-    { id: 'loop', name: 'Loop' },
-    { id: 'initialization', name: 'Inicialização' },
-    { id: 'finalization', name: 'Finalização' }
+    { id: 'arrow', name: 'Seta de Fluxo' },
+    { id: 'communication', name: 'Rede / Comunicação' },
+    { id: 'comment', name: 'Comentário / Anotação' }
   ];
 
   // Alternar Ferramentas
@@ -85,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Modal Biblioteca de Símbolos
+  // Modal Biblioteca de Símbolos com Preview em Mini-Canvas
   const symbolsModal = document.getElementById('symbols-modal');
   const btnSymbolLibrary = document.getElementById('btn-symbol-library');
   const closeSymbolsModal = document.getElementById('close-symbols-modal');
@@ -103,11 +84,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     filtered.forEach(s => {
       const card = document.createElement('button');
-      card.className = 'p-2.5 rounded-lg bg-slate-950 border border-slate-800 hover:border-emerald-500/50 hover:bg-slate-800/50 text-left transition flex flex-col justify-between gap-1 group';
+      card.className = 'p-3 rounded-lg bg-slate-950 border border-slate-800 hover:border-emerald-500/60 hover:bg-slate-800/40 text-left transition flex items-center gap-3 group';
+      
+      const canvasId = `preview-${s.id}`;
       
       card.innerHTML = `
-        <span class="text-xs font-semibold text-slate-300 group-hover:text-emerald-400 transition">${s.name}</span>
-        <span class="text-[10px] text-slate-500 font-mono">type: "${s.id}"</span>
+        <div class="w-12 h-12 rounded bg-slate-900 border border-slate-800 flex items-center justify-center shrink-0 group-hover:border-emerald-500/40 transition">
+          <canvas id="${canvasId}" width="40" height="40"></canvas>
+        </div>
+        <div class="flex flex-col min-w-0">
+          <span class="text-xs font-semibold text-slate-200 group-hover:text-emerald-400 transition truncate">${s.name}</span>
+          <span class="text-[10px] text-slate-500 font-mono">type: "${s.id}"</span>
+        </div>
       `;
 
       card.addEventListener('click', () => {
@@ -117,6 +105,35 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       symbolsGrid.appendChild(card);
+
+      // Renderiza o mini preview vetorial no canvas após inserir no DOM
+      setTimeout(() => {
+        const pCanvas = document.getElementById(canvasId);
+        if (pCanvas) {
+          const pCtx = pCanvas.getContext('2d');
+          const pRc = rough.canvas(pCanvas);
+
+          const previewShape = {
+            type: s.id,
+            x: 6,
+            y: 6,
+            width: 28,
+            height: 28,
+            selected: false,
+            waypoints: [{ x: 34, y: 34 }]
+          };
+
+          if (['line', 'arrow'].includes(s.id)) {
+            previewShape.x = 6;
+            previewShape.y = 20;
+            previewShape.width = 28;
+            previewShape.height = 0;
+            previewShape.waypoints = [{ x: 34, y: 20 }];
+          }
+
+          ShapeRenderer.draw(pRc, pCtx, previewShape, []);
+        }
+      }, 0);
     });
   }
 
@@ -135,7 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderSymbolsGrid(e.target.value);
   });
 
-  // Funções Auxiliares para Salvamento com File System Access API
+  // Funções Auxiliares para Salvamento
   async function saveWithSystemDialog(blob, defaultName, types) {
     if ('showSaveFilePicker' in window) {
       try {
@@ -160,7 +177,6 @@ document.addEventListener('DOMContentLoaded', () => {
     URL.revokeObjectURL(url);
   }
 
-  // Função para exportar PNG do Bounding Box completo de todos os elementos
   function exportFullCanvasToBlob() {
     return new Promise((resolve) => {
       const elements = canvasMgr.elements;
@@ -170,7 +186,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return resolve(null);
       }
 
-      // Calcula os limites cartesianos absolutos (Bounding Box) de todos os elementos
       let minX = Infinity;
       let minY = Infinity;
       let maxX = -Infinity;
@@ -193,11 +208,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
 
-      const padding = 40; // Margem interna em pixels em volta da imagem
+      const padding = 40;
       const width = Math.max(maxX - minX + padding * 2, 200);
       const height = Math.max(maxY - minY + padding * 2, 200);
 
-      // Cria canvas invisível em memória
       const offCanvas = document.createElement('canvas');
       offCanvas.width = width;
       offCanvas.height = height;
@@ -205,15 +219,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const ctx = offCanvas.getContext('2d');
       const rc = rough.canvas(offCanvas);
 
-      // Preenche com o fundo escuro do tema
       ctx.fillStyle = '#020617';
       ctx.fillRect(0, 0, width, height);
 
-      // Aplica a translação para centralizar com a margem (padding)
       ctx.save();
       ctx.translate(-minX + padding, -minY + padding);
 
-      // Renderiza cada elemento de forma limpa (sem seleção ativa)
       elements.forEach(shape => {
         const cleanShape = { ...shape, selected: false };
         ShapeRenderer.draw(rc, ctx, cleanShape, elements);
@@ -329,7 +340,6 @@ document.addEventListener('DOMContentLoaded', () => {
     ]);
   });
 
-  // Baixar Imagem (PNG) calculando o Bounding Box de todos os elementos
   document.getElementById('btn-download-img').addEventListener('click', async () => {
     const imageBlob = await exportFullCanvasToBlob();
     if (imageBlob) {
