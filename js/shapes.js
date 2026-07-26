@@ -1,4 +1,4 @@
-// Renderização das formas Hand-Drawn via Rough.js com Suporte a Alinhamento de Texto
+// Renderização das formas Hand-Drawn via Rough.js com Suporte a Zoom e Alinhamento
 const ShapeRenderer = {
   draw(rc, ctx, shape, elements = []) {
     const options = {
@@ -144,7 +144,7 @@ const ShapeRenderer = {
           break;
 
         case 'punched-card':
-          rc.polygon([[x + 15, y], [x + w, y], [x + w, y + h], [x, y + h], [x, y + 15]], options);
+          rc.polygon([[x + 15, y], [x + w], [x + w, y + h], [x, y + h], [x, y + 15]], options);
           break;
 
         case 'punched-tape':
@@ -203,7 +203,6 @@ const ShapeRenderer = {
       }
     }
 
-    // Renderiza Texto respeitando o alinhamento
     if (text) {
       ctx.font = '14px monospace';
       ctx.fillStyle = '#64748b';
@@ -216,11 +215,11 @@ const ShapeRenderer = {
       const lineHeight = 18;
       const startY = (y + h / 2) - ((lines.length - 1) * lineHeight) / 2;
 
-      let textX = x + w / 2; // Padrão 'center'
+      let textX = x + w / 2;
       if (align === 'left') {
-        textX = x + 15; // Margem interna esquerda
+        textX = x + 15;
       } else if (align === 'right') {
-        textX = x + w - 15; // Margem interna direita
+        textX = x + w - 15;
       }
 
       lines.forEach((line, index) => {

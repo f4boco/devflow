@@ -65,8 +65,21 @@ document.addEventListener('DOMContentLoaded', () => {
       toolButtons.forEach(b => b.classList.remove('active-tool'));
       btn.classList.add('active-tool');
       canvasMgr.currentTool = btn.dataset.tool;
+      canvasMgr.updateZoomIcon();
     });
   });
+
+  // Resetar Zoom para 100% ao clicar na porcentagem
+  const zoomText = document.getElementById('zoom-level-text');
+  if (zoomText) {
+    zoomText.addEventListener('click', () => {
+      canvasMgr.zoom = 1.0;
+      canvasMgr.panX = 0;
+      canvasMgr.panY = 0;
+      canvasMgr.updateZoomDisplay();
+      canvasMgr.render();
+    });
+  }
 
   // Modal Biblioteca de Símbolos
   const symbolsModal = document.getElementById('symbols-modal');
@@ -116,7 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderSymbolsGrid(e.target.value);
   });
 
-  // Funções Auxiliares para Salvamento com Caixa do Sistema (File System Access API)
+  // Funções Auxiliares para Salvamento com File System Access API
   async function saveWithSystemDialog(blob, defaultName, types) {
     if ('showSaveFilePicker' in window) {
       try {
@@ -129,11 +142,10 @@ document.addEventListener('DOMContentLoaded', () => {
         await writable.close();
         return;
       } catch (err) {
-        if (err.name === 'AbortError') return; // Usuário cancelou a caixa de diálogo
+        if (err.name === 'AbortError') return;
       }
     }
 
-    // Fallback para navegadores sem suporte à API showSaveFilePicker
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -172,7 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     };
     reader.readAsText(file);
-    inputImportFile.value = ''; // Reseta input
+    inputImportFile.value = '';
   });
 
   // Atalhos de Teclado
@@ -181,6 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const keyToolMap = {
       'h': 'hand',
+      'z': 'zoom',
       's': 'select',
       'p': 'pencil',
       'w': 'auto-draw',
@@ -189,7 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const tool = keyToolMap[e.key.toLowerCase()];
-    if (tool) {
+    if (tool && !(e.ctrlKey || e.metaKey)) {
       const btn = document.querySelector(`.tool-btn[data-tool="${tool}"]`);
       if (btn) btn.click();
     }
@@ -221,7 +234,6 @@ document.addEventListener('DOMContentLoaded', () => {
     alert('ASCII Art copiado para a área de transferência!');
   });
 
-  // Baixar Arquivo Editável (.devflow)
   document.getElementById('btn-download-editable').addEventListener('click', async () => {
     const jsonString = JSON.stringify(canvasMgr.elements, null, 2);
     const blob = new Blob([jsonString], { type: 'application/json' });
@@ -233,7 +245,6 @@ document.addEventListener('DOMContentLoaded', () => {
     ]);
   });
 
-  // Baixar Markdown (.md) com caixa do sistema
   document.getElementById('btn-download-md').addEventListener('click', async () => {
     const content = "```text\n" + asciiPreview.textContent + "\n```";
     const blob = new Blob([content], { type: 'text/markdown' });
@@ -245,7 +256,6 @@ document.addEventListener('DOMContentLoaded', () => {
     ]);
   });
 
-  // Baixar Imagem (PNG) com caixa do sistema
   document.getElementById('btn-download-img').addEventListener('click', async () => {
     html2canvas(document.getElementById('workspace')).then(async canvas => {
       canvas.toBlob(async (blob) => {

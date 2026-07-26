@@ -28,6 +28,12 @@
       <button data-tool="hand" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition" title="Mão / Pan (H)">
         <i data-lucide="hand"></i>
       </button>
+
+      <!-- Ferramenta de Zoom -->
+      <button data-tool="zoom" id="btn-zoom-tool" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition" title="Zoom In (Clique) / Zoom Out (Shift+Clique) (Z)">
+        <i data-lucide="zoom-in" id="zoom-icon"></i>
+      </button>
+
       <button data-tool="select" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition active-tool" title="Selecionar (S)">
         <i data-lucide="mouse-pointer"></i>
       </button>
@@ -91,8 +97,11 @@
       </button>
     </div>
 
-    <!-- Actions -->
+    <!-- Actions & Zoom Display -->
     <div class="flex items-center gap-2">
+      <!-- Nível de Zoom -->
+      <span id="zoom-level-text" class="text-xs font-mono text-slate-400 bg-slate-900 border border-slate-800 px-2 py-1 rounded select-none cursor-pointer hover:text-emerald-400 transition" title="Clique para resetar em 100%">100%</span>
+
       <button id="btn-open-file" class="px-3 py-1.5 rounded bg-sky-500/10 border border-sky-500/30 text-sky-400 hover:bg-sky-500/20 text-sm flex items-center gap-1 transition">
         <i data-lucide="folder-open" class="w-4 h-4"></i> Abrir
       </button>

@@ -14,9 +14,14 @@ class CanvasManager {
     this.activeHandle = null;
     this.freehandPoints = [];
     
-    // Pan & Zoom
+    // Pan & Zoom State
     this.panX = 0;
     this.panY = 0;
+    this.zoom = 1.0; // 100% Zoom inicial
+    this.minZoom = 0.2; // 20% Min
+    this.maxZoom = 3.0; // 300% Max
+
+    this.isShiftPressed = false;
 
     // Histórico para Undo/Redo (Ctrl+Z / Ctrl+Y)
     this.undoStack = [];
@@ -75,7 +80,6 @@ class CanvasManager {
     }
   }
 
-  // Alterna a ferramenta ativa de volta para 'select' e atualiza os botões da barra
   resetToSelectTool() {
     this.currentTool = 'select';
     const toolButtons = document.querySelectorAll('.tool-btn');
@@ -88,8 +92,35 @@ class CanvasManager {
     });
   }
 
+  zoomAt(centerX, centerY, deltaZoom) {
+    const oldZoom = this.zoom;
+    let newZoom = oldZoom + deltaZoom;
+    newZoom = Math.min(Math.max(newZoom, this.minZoom), this.maxZoom);
+
+    if (newZoom === oldZoom) return;
+
+    this.panX = centerX - (centerX - this.panX) * (newZoom / oldZoom);
+    this.panY = centerY - (centerY - this.panY) * (newZoom / oldZoom);
+    this.zoom = newZoom;
+
+    this.updateZoomDisplay();
+    this.render();
+  }
+
+  updateZoomDisplay() {
+    const zoomText = document.getElementById('zoom-level-text');
+    if (zoomText) {
+      zoomText.textContent = `${Math.round(this.zoom * 100)}%`;
+    }
+  }
+
   setupKeyboardShortcuts() {
     window.addEventListener('keydown', (e) => {
+      if (e.key === 'Shift') {
+        this.isShiftPressed = true;
+        this.updateZoomIcon();
+      }
+
       if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
 
       const isCtrlOrCmd = e.ctrlKey || e.metaKey;
@@ -110,6 +141,23 @@ class CanvasManager {
         this.deleteSelected();
       }
     });
+
+    window.addEventListener('keyup', (e) => {
+      if (e.key === 'Shift') {
+        this.isShiftPressed = false;
+        this.updateZoomIcon();
+      }
+    });
+  }
+
+  updateZoomIcon() {
+    const zoomIcon = document.getElementById('zoom-icon');
+    if (zoomIcon) {
+      if (this.currentTool === 'zoom') {
+        zoomIcon.setAttribute('data-lucide', this.isShiftPressed ? 'zoom-out' : 'zoom-in');
+        lucide.createIcons();
+      }
+    }
   }
 
   resize() {
@@ -123,20 +171,51 @@ class CanvasManager {
     this.canvas.addEventListener('mousemove', (e) => this.onMouseMove(e));
     this.canvas.addEventListener('mouseup', () => this.onMouseUp());
     this.canvas.addEventListener('dblclick', (e) => this.onDoubleClick(e));
+
+    // Navegação de Tela via Scroll do Mouse (Cima/Baixo e Esquerda/Direita com Shift)
+    this.canvas.addEventListener('wheel', (e) => {
+      e.preventDefault();
+
+      // Se a tecla Ctrl/Cmd estiver pressionada, aciona Zoom por Scroll
+      if (e.ctrlKey || e.metaKey) {
+        const rect = this.canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        const delta = e.deltaY < 0 ? 0.1 : -0.1;
+        this.zoomAt(mouseX, mouseY, delta);
+        return;
+      }
+
+      // Deslocamento da tela (Pan)
+      if (e.shiftKey) {
+        // Shift + Scroll -> Move para Esquerda / Direita
+        this.panX -= e.deltaY;
+      } else {
+        // Scroll Padrão -> Move para Cima / Baixo
+        this.panY -= e.deltaY;
+      }
+
+      this.render();
+    }, { passive: false });
   }
 
   getCoords(e) {
     const rect = this.canvas.getBoundingClientRect();
+    const clientX = e.clientX - rect.left;
+    const clientY = e.clientY - rect.top;
+
     return {
-      x: e.clientX - rect.left - this.panX,
-      y: e.clientY - rect.top - this.panY
+      x: (clientX - this.panX) / this.zoom,
+      y: (clientY - this.panY) / this.zoom,
+      screenX: clientX,
+      screenY: clientY
     };
   }
 
   getHandleAtPoint(x, y, shape) {
     if (!shape || !shape.selected) return null;
     const handles = ShapeRenderer.getHandles(shape, this.elements);
-    const threshold = 10;
+    const threshold = 10 / this.zoom;
 
     for (const [key, handle] of Object.entries(handles)) {
       if (Math.hypot(x - handle.x, y - handle.y) <= threshold) {
@@ -166,7 +245,15 @@ class CanvasManager {
   }
 
   onMouseDown(e) {
-    const { x, y } = this.getCoords(e);
+    const coords = this.getCoords(e);
+    const { x, y, screenX, screenY } = coords;
+
+    if (this.currentTool === 'zoom') {
+      const delta = this.isShiftPressed ? -0.2 : 0.2;
+      this.zoomAt(screenX, screenY, delta);
+      return;
+    }
+
     this.isDrawing = true;
     this.startX = x;
     this.startY = y;
@@ -243,6 +330,11 @@ class CanvasManager {
   onMouseMove(e) {
     const { x, y } = this.getCoords(e);
 
+    if (this.currentTool === 'zoom') {
+      this.canvas.style.cursor = this.isShiftPressed ? 'zoom-out' : 'zoom-in';
+      return;
+    }
+
     if (this.currentTool === 'select' && !this.isDrawing) {
       const selectedEl = this.elements.find(el => el.selected);
       if (selectedEl) {
@@ -275,12 +367,12 @@ class CanvasManager {
         if (this.activeHandle) {
           this.resizeElementWithHandle(this.activeElement, this.activeHandle, x, y);
         } else {
-          this.activeElement.x += e.movementX;
-          this.activeElement.y += e.movementY;
+          this.activeElement.x += e.movementX / this.zoom;
+          this.activeElement.y += e.movementY / this.zoom;
           if (this.activeElement.waypoints) {
             this.activeElement.waypoints.forEach(wp => {
-              wp.x += e.movementX;
-              wp.y += e.movementY;
+              wp.x += e.movementX / this.zoom;
+              wp.y += e.movementY / this.zoom;
             });
           }
         }
@@ -341,7 +433,6 @@ class CanvasManager {
     if (!this.isDrawing) return;
     this.isDrawing = false;
 
-    // Caneta Livre (Pencil) permanece com a ferramenta ativa para continuar desenhando
     if (this.currentTool === 'pencil' && this.freehandPoints.length > 1) {
       const smoothed = this.smoothPoints(this.freehandPoints);
 
@@ -399,7 +490,6 @@ class CanvasManager {
       this.freehandPoints = [];
       this.render();
 
-      // Volta automaticamente para a ferramenta de seleção
       this.resetToSelectTool();
       return;
     }
@@ -441,7 +531,6 @@ class CanvasManager {
           this.openTextEditor(createdElement);
         }
 
-        // Volta automaticamente para a ferramenta de seleção após criar qualquer forma
         this.resetToSelectTool();
         return;
       }
@@ -514,13 +603,18 @@ class CanvasManager {
 
     editor.value = shape.text || '';
     
-    container.style.left = `${shape.x + this.panX}px`;
-    container.style.top = `${shape.y + this.panY - 32}px`;
-    container.style.width = `${Math.max(shape.width, 120)}px`;
-    container.style.height = `${Math.max(shape.height + 32, 70)}px`;
+    const scaledX = shape.x * this.zoom + this.panX;
+    const scaledY = shape.y * this.zoom + this.panY;
+    const scaledW = Math.max(shape.width * this.zoom, 120);
+    const scaledH = Math.max(shape.height * this.zoom, 40);
+
+    container.style.left = `${scaledX}px`;
+    container.style.top = `${scaledY - 32}px`;
+    container.style.width = `${scaledW}px`;
+    container.style.height = `${scaledH + 32}px`;
 
     editor.style.width = '100%';
-    editor.style.height = `${Math.max(shape.height, 40)}px`;
+    editor.style.height = `${scaledH}px`;
 
     container.classList.remove('hidden');
 
@@ -595,7 +689,7 @@ class CanvasManager {
         const dist = Math.abs((y2 - y1) * x - (x2 - x1) * y + x2 * y1 - y2 * x1) / len;
         
         const dot = ((x - x1) * (x2 - x1) + (y - y1) * (y2 - y1)) / (len * len);
-        if (dist < 12 && dot >= 0 && dot <= 1) return true;
+        if (dist < (12 / this.zoom) && dot >= 0 && dot <= 1) return true;
       }
       return false;
     }
@@ -605,19 +699,25 @@ class CanvasManager {
 
   renderFreehand() {
     if (this.freehandPoints.length < 2) return;
+    this.ctx.save();
+    this.ctx.translate(this.panX, this.panY);
+    this.ctx.scale(this.zoom, this.zoom);
+
     this.ctx.beginPath();
     this.ctx.strokeStyle = '#10b981';
-    this.ctx.lineWidth = 2;
-    this.ctx.moveTo(this.freehandPoints[0].x + this.panX, this.freehandPoints[0].y + this.panY);
+    this.ctx.lineWidth = 2 / this.zoom;
+    this.ctx.moveTo(this.freehandPoints[0].x, this.freehandPoints[0].y);
     for (let i = 1; i < this.freehandPoints.length; i++) {
-      this.ctx.lineTo(this.freehandPoints[i].x + this.panX, this.freehandPoints[i].y + this.panY);
+      this.ctx.lineTo(this.freehandPoints[i].x, this.freehandPoints[i].y);
     }
     this.ctx.stroke();
+    this.ctx.restore();
   }
 
   ShapeRendererDraw(shape) {
     this.ctx.save();
     this.ctx.translate(this.panX, this.panY);
+    this.ctx.scale(this.zoom, this.zoom);
     ShapeRenderer.draw(this.rc, this.ctx, shape, this.elements);
     this.ctx.restore();
   }
