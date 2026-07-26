@@ -36,7 +36,7 @@ Como o DevFlow não possui backend, a instalação é instantânea. Não é nece
 
 1. Clone este repositório:
    ```bash
-   git clone [https://github.com/SEU-USUARIO/devflow.git](https://github.com/SEU-USUARIO/devflow.git)
+   git clone [https://github.com/f4boco/devflow.git](https://github.com/f4boco/devflow.git)
 2. Acesse a pasta do projeto:
     ```bash
     cd devflow
