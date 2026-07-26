@@ -1,4 +1,4 @@
-// Renderização das formas Hand-Drawn via Rough.js com Ancoragem, Control Handles e Linhas Dobráveis
+// Renderização das formas Hand-Drawn via Rough.js com Suporte a Alinhamento de Texto
 const ShapeRenderer = {
   draw(rc, ctx, shape, elements = []) {
     const options = {
@@ -12,18 +12,15 @@ const ShapeRenderer = {
 
     let { x, y, width: w, height: h, type, text, points, initialWidth, initialHeight } = shape;
 
-    // Se for linha ou seta, calcula caminho com suporte a múltiplos vértices (dobras)
     if (type === 'line' || type === 'arrow') {
       const lineWaypoints = this.getLineWaypoints(shape, elements);
 
-      // Desenha segmentos entre os pontos/dobras
       for (let i = 0; i < lineWaypoints.length - 1; i++) {
         const p1 = lineWaypoints[i];
         const p2 = lineWaypoints[i + 1];
         rc.line(p1.x, p1.y, p2.x, p2.y, options);
       }
 
-      // Desenha ponta da seta no último segmento
       if (type === 'arrow' && lineWaypoints.length >= 2) {
         const pLastPrev = lineWaypoints[lineWaypoints.length - 2];
         const pLast = lineWaypoints[lineWaypoints.length - 1];
@@ -78,7 +75,7 @@ const ShapeRenderer = {
         case 'input-output':
         case 'data-flow':
           const ioOffset = 15;
-          rc.polygon([[x + ioOffset, y], [x + w, y], [x + w - ioOffset, y + h], [x, y + h]], options);
+          rc.polygon([[x + ioOffset, y], [x + w], [x + w - ioOffset, y + h], [x, y + h]], options);
           break;
 
         case 'manual-input':
@@ -206,19 +203,28 @@ const ShapeRenderer = {
       }
     }
 
-    // Renderiza Texto Centralizado
+    // Renderiza Texto respeitando o alinhamento
     if (text) {
       ctx.font = '14px monospace';
       ctx.fillStyle = '#64748b';
-      ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       
+      const align = shape.textAlign || 'center';
+      ctx.textAlign = align;
+
       const lines = text.split('\n');
       const lineHeight = 18;
       const startY = (y + h / 2) - ((lines.length - 1) * lineHeight) / 2;
 
+      let textX = x + w / 2; // Padrão 'center'
+      if (align === 'left') {
+        textX = x + 15; // Margem interna esquerda
+      } else if (align === 'right') {
+        textX = x + w - 15; // Margem interna direita
+      }
+
       lines.forEach((line, index) => {
-        ctx.fillText(line, x + w / 2, startY + (index * lineHeight));
+        ctx.fillText(line, textX, startY + (index * lineHeight));
       });
     }
 
@@ -227,14 +233,12 @@ const ShapeRenderer = {
     }
   },
 
-  // Retorna os pontos completos (com ancoragem nas bordas e dobras/waypoints)
   getLineWaypoints(shape, elements = []) {
     const startShape = elements.find(el => el.id === shape.startConnectedTo);
     const endShape = elements.find(el => el.id === shape.endConnectedTo);
 
     const waypoints = shape.waypoints || [];
 
-    // Ponto inicial do primeiro segmento
     let pStart = { x: shape.x, y: shape.y };
     const pNext = waypoints.length > 0 ? waypoints[0] : { x: shape.x + shape.width, y: shape.y + shape.height };
 
@@ -243,7 +247,6 @@ const ShapeRenderer = {
       pStart = this.getEdgeIntersection(startCenter, pNext, startShape);
     }
 
-    // Ponto final do último segmento
     let pEnd = { x: shape.x + shape.width, y: shape.y + shape.height };
     const pPrev = waypoints.length > 0 ? waypoints[waypoints.length - 1] : pStart;
 
@@ -267,11 +270,9 @@ const ShapeRenderer = {
       ctx.beginPath();
       if (['line', 'arrow'].includes(shape.type)) {
         if (key.startsWith('mid_')) {
-          // Pontos intermediários de criação de dobra (semitransparentes)
           ctx.fillStyle = 'rgba(16, 185, 129, 0.4)';
           ctx.arc(h.x, h.y, 4, 0, Math.PI * 2);
         } else {
-          // Vértices/Dobras fixas
           ctx.fillStyle = '#10b981';
           ctx.arc(h.x, h.y, 5, 0, Math.PI * 2);
         }
@@ -292,14 +293,12 @@ const ShapeRenderer = {
       const waypoints = this.getLineWaypoints(shape, elements);
       const handles = {};
 
-      // Handles para os vértices principais (pontas e dobras)
       waypoints.forEach((pt, idx) => {
         if (idx === 0) handles['start'] = pt;
         else if (idx === waypoints.length - 1) handles['end'] = pt;
         else handles[`waypoint_${idx - 1}`] = pt;
       });
 
-      // Handles intermediários no meio de cada segmento (para puxar e criar nova dobra)
       for (let i = 0; i < waypoints.length - 1; i++) {
         const midX = (waypoints[i].x + waypoints[i + 1].x) / 2;
         const midY = (waypoints[i].y + waypoints[i + 1].y) / 2;

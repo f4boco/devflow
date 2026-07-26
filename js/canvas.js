@@ -183,7 +183,6 @@ class CanvasManager {
         if (handleKey) {
           this.activeElement = selectedEl;
 
-          // Se clicou no handle do meio de um segmento, insere uma nova DOBRA (waypoint)
           if (handleKey.startsWith('mid_')) {
             const segmentIdx = parseInt(handleKey.split('_')[1], 10);
             if (!this.activeElement.waypoints) this.activeElement.waypoints = [];
@@ -221,6 +220,7 @@ class CanvasManager {
       width: 10,
       height: 10,
       text: '',
+      textAlign: 'center', // Padrão Centralizado
       waypoints: [],
       startConnectedTo: startShape ? startShape.id : null,
       endConnectedTo: null
@@ -262,7 +262,6 @@ class CanvasManager {
         if (this.activeHandle) {
           this.resizeElementWithHandle(this.activeElement, this.activeHandle, x, y);
         } else {
-          // Mover elemento inteiro + seus waypoints/dobras
           this.activeElement.x += e.movementX;
           this.activeElement.y += e.movementY;
           if (this.activeElement.waypoints) {
@@ -357,7 +356,8 @@ class CanvasManager {
         initialWidth: width,
         initialHeight: height,
         points: relativePoints,
-        text: ''
+        text: '',
+        textAlign: 'center'
       };
 
       this.elements.push(pencilShape);
@@ -373,7 +373,7 @@ class CanvasManager {
     if (this.currentTool === 'auto-draw' && this.freehandPoints.length > 0) {
       const recognized = ShapeRecognizer.recognize(this.freehandPoints);
       if (recognized) {
-        const newShape = { id: Date.now(), ...recognized, text: '' };
+        const newShape = { id: Date.now(), ...recognized, text: '', textAlign: 'center' };
         this.elements.push(newShape);
         Storage.save(this.elements);
         this.saveHistory();
@@ -453,7 +453,6 @@ class CanvasManager {
   onDoubleClick(e) {
     const { x, y } = this.getCoords(e);
     
-    // Se der duplo clique sobre um ponto de dobra (waypoint), remove essa dobra
     const selectedEl = this.elements.find(el => el.selected && ['line', 'arrow'].includes(el.type));
     if (selectedEl && selectedEl.waypoints) {
       const handleKey = this.getHandleAtPoint(x, y, selectedEl);
@@ -474,22 +473,62 @@ class CanvasManager {
   }
 
   openTextEditor(shape) {
+    const container = document.getElementById('text-editor-container');
     const editor = document.getElementById('text-editor');
+    const alignBtns = document.querySelectorAll('.align-btn');
+
+    if (!shape.textAlign) shape.textAlign = 'center';
+
+    // Atualiza botões ativos na toolbar de alinhamento
+    const updateAlignButtons = (currentAlign) => {
+      alignBtns.forEach(btn => {
+        if (btn.dataset.align === currentAlign) {
+          btn.classList.add('text-emerald-400', 'bg-slate-800');
+        } else {
+          btn.classList.remove('text-emerald-400', 'bg-slate-800');
+        }
+      });
+      editor.style.textAlign = currentAlign;
+    };
+
+    updateAlignButtons(shape.textAlign);
+
     editor.value = shape.text || '';
     
-    editor.style.left = `${shape.x + this.panX}px`;
-    editor.style.top = `${shape.y + this.panY}px`;
-    editor.style.width = `${Math.max(shape.width, 100)}px`;
+    // Posiciona o container com offset para caber a toolbar de alinhamento em cima
+    container.style.left = `${shape.x + this.panX}px`;
+    container.style.top = `${shape.y + this.panY - 32}px`;
+    container.style.width = `${Math.max(shape.width, 120)}px`;
+    container.style.height = `${Math.max(shape.height + 32, 70)}px`;
+
+    editor.style.width = '100%';
     editor.style.height = `${Math.max(shape.height, 40)}px`;
-    
-    editor.classList.remove('hidden');
-    
+
+    container.classList.remove('hidden');
+
     setTimeout(() => {
       editor.focus();
       editor.select();
     }, 10);
 
-    const saveText = () => {
+    const handleAlignClick = (e) => {
+      const btn = e.target.closest('.align-btn');
+      if (btn) {
+        shape.textAlign = btn.dataset.align;
+        updateAlignButtons(shape.textAlign);
+        this.render();
+      }
+    };
+
+    const alignToolbar = document.getElementById('text-align-toolbar');
+    alignToolbar.addEventListener('click', handleAlignClick);
+
+    const saveText = (e) => {
+      // Se clicou dentro da toolbar de alinhamento, não encerra a edição
+      if (e.relatedTarget && alignToolbar.contains(e.relatedTarget)) {
+        return;
+      }
+
       shape.text = editor.value;
       
       this.ctx.font = '14px monospace';
@@ -503,13 +542,14 @@ class CanvasManager {
       shape.width = Math.max(shape.width, maxLineWidth + 40);
       shape.height = Math.max(shape.height, lines.length * 20 + 30);
 
-      editor.classList.add('hidden');
+      container.classList.add('hidden');
       Storage.save(this.elements);
       this.saveHistory();
       this.render();
 
       editor.removeEventListener('blur', saveText);
       editor.removeEventListener('keydown', handleKeyDown);
+      alignToolbar.removeEventListener('click', handleAlignClick);
     };
 
     const handleKeyDown = (e) => {
@@ -537,7 +577,6 @@ class CanvasManager {
         const len = Math.hypot(x2 - x1, y2 - y1) || 1;
         const dist = Math.abs((y2 - y1) * x - (x2 - x1) * y + x2 * y1 - y2 * x1) / len;
         
-        // Checa se o ponto do clique está no intervalo do segmento
         const dot = ((x - x1) * (x2 - x1) + (y - y1) * (y2 - y1)) / (len * len);
         if (dist < 12 && dot >= 0 && dot <= 1) return true;
       }

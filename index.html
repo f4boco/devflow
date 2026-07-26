@@ -93,11 +93,9 @@
 
     <!-- Actions -->
     <div class="flex items-center gap-2">
-      <!-- Importar Projeto / Abrir -->
       <button id="btn-open-file" class="px-3 py-1.5 rounded bg-sky-500/10 border border-sky-500/30 text-sky-400 hover:bg-sky-500/20 text-sm flex items-center gap-1 transition">
         <i data-lucide="folder-open" class="w-4 h-4"></i> Abrir
       </button>
-      <!-- Input de arquivo oculto para upload -->
       <input type="file" id="input-import-file" accept=".devflow,.json" class="hidden">
 
       <button id="btn-new" class="px-3 py-1.5 rounded bg-rose-500/10 border border-rose-500/30 text-rose-400 hover:bg-rose-500/20 text-sm flex items-center gap-1 transition">
@@ -113,8 +111,23 @@
   <main class="flex-1 relative bg-slate-950 overflow-hidden cursor-crosshair" id="workspace">
     <canvas id="flowchart-canvas"></canvas>
 
-    <!-- Invisible textarea overlay for quick text editing -->
-    <textarea id="text-editor" class="hidden absolute bg-slate-800 text-emerald-400 border border-emerald-500 rounded p-1 font-mono text-sm outline-none resize-none shadow-2xl z-20"></textarea>
+    <!-- Overlay de Edição de Texto com Barra Flutuante de Alinhamento -->
+    <div id="text-editor-container" class="hidden absolute z-20 flex flex-col gap-1 items-start">
+      <!-- Toolbar Alinhamento do Texto -->
+      <div id="text-align-toolbar" class="flex items-center bg-slate-900 border border-slate-700 rounded p-0.5 shadow-xl text-slate-400">
+        <button type="button" data-align="left" class="align-btn p-1 rounded hover:bg-slate-800 hover:text-emerald-400 transition" title="Alinhar à Esquerda">
+          <i data-lucide="align-left" class="w-3.5 h-3.5"></i>
+        </button>
+        <button type="button" data-align="center" class="align-btn p-1 rounded hover:bg-slate-800 hover:text-emerald-400 transition text-emerald-400 bg-slate-800" title="Centralizado">
+          <i data-lucide="align-center" class="w-3.5 h-3.5"></i>
+        </button>
+        <button type="button" data-align="right" class="align-btn p-1 rounded hover:bg-slate-800 hover:text-emerald-400 transition" title="Alinhar à Direita">
+          <i data-lucide="align-right" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+
+      <textarea id="text-editor" class="bg-slate-800 text-emerald-400 border border-emerald-500 rounded p-1 font-mono text-sm outline-none resize-none shadow-2xl w-full h-full"></textarea>
+    </div>
   </main>
 
   <!-- Modal Biblioteca de Símbolos -->
@@ -130,13 +143,11 @@
         </button>
       </div>
 
-      <!-- Barra de Pesquisa de Símbolos -->
       <div class="relative">
         <i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-slate-500"></i>
         <input type="text" id="search-symbol" placeholder="Buscar símbolo (ex: Banco de Dados, Decisão, Documento)..." class="w-full bg-slate-950 border border-slate-800 rounded p-2 pl-9 text-sm text-slate-200 outline-none focus:border-emerald-500 transition">
       </div>
 
-      <!-- Grid dos Símbolos -->
       <div id="symbols-grid" class="flex-1 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 p-1">
         <!-- Renderizado dinamicamente via JS -->
       </div>
@@ -163,12 +174,9 @@
         <button id="btn-copy-ascii" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded flex items-center gap-2 text-sm transition">
           <i data-lucide="copy" class="w-4 h-4"></i> Copiar ASCII
         </button>
-
-        <!-- Botão Arquivo Editável (.devflow) -->
         <button id="btn-download-editable" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-medium rounded flex items-center gap-2 text-sm transition">
           <i data-lucide="file-json" class="w-4 h-4"></i> Arquivo Editável
         </button>
-
         <button id="btn-download-md" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded flex items-center gap-2 text-sm transition">
           <i data-lucide="file-text" class="w-4 h-4"></i> Baixar .md
         </button>
