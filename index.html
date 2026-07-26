@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DevFlow - Algorithmic Flowcharts</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Rough.js (Estilo Hand-drawn estilo Excalidraw) -->
+  <script src="https://unpkg.com/roughjs@latest/bundled/rough.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- HTML2Canvas para exportação de imagem -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="bg-slate-900 text-slate-100 h-screen w-screen overflow-hidden flex flex-col font-mono select-none">
+
+  <!-- Header / Top Toolbar -->
+  <header class="h-14 border-b border-slate-800 bg-slate-950/80 backdrop-blur px-4 flex items-center justify-between z-10">
+    <div class="flex items-center gap-2">
+      <div class="w-3 h-3 rounded-full bg-emerald-500"></div>
+      <span class="font-bold text-lg tracking-wider text-emerald-400">&lt;DevFlow/&gt;</span>
+    </div>
+
+    <!-- Tools Bar -->
+    <div class="flex items-center bg-slate-900 border border-slate-800 rounded-lg p-1 gap-1 shadow-lg overflow-x-auto">
+      <button data-tool="hand" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition" title="Mão / Pan (H)">
+        <i data-lucide="hand"></i>
+      </button>
+      <button data-tool="select" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition active-tool" title="Selecionar (S)">
+        <i data-lucide="mouse-pointer"></i>
+      </button>
+      
+      <div class="w-px h-6 bg-slate-800 mx-1"></div>
+
+      <!-- Quick Flowchart Shapes -->
+      <button data-tool="start-end" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition flex items-center justify-center" title="Início / Fim (Pílula)">
+        <svg class="w-6 h-6 stroke-current fill-none stroke-[2]" viewBox="0 0 24 24">
+          <rect x="3" y="7" width="18" height="10" rx="5" ry="5" />
+        </svg>
+      </button>
+
+      <button data-tool="process" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition flex items-center justify-center" title="Processo (Retângulo)">
+        <svg class="w-6 h-6 stroke-current fill-none stroke-[2]" viewBox="0 0 24 24">
+          <rect x="3" y="6" width="18" height="12" rx="1" />
+        </svg>
+      </button>
+      
+      <button data-tool="input-output" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition flex items-center justify-center" title="Entrada / Saída (Paralelogramo)">
+        <svg class="w-6 h-6 stroke-current fill-none stroke-[2]" viewBox="0 0 24 24">
+          <polygon points="6,6 21,6 18,18 3,18" />
+        </svg>
+      </button>
+      
+      <button data-tool="condition" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition flex items-center justify-center" title="Condição / Decisão (Losango)">
+        <svg class="w-6 h-6 stroke-current fill-none stroke-[2]" viewBox="0 0 24 24">
+          <polygon points="12,3 21,12 12,21 3,12" />
+        </svg>
+      </button>
+
+      <!-- Botão Biblioteca de Símbolos -->
+      <button id="btn-symbol-library" class="p-2 rounded hover:bg-slate-800 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 text-xs font-semibold transition" title="Biblioteca de Símbolos Completa">
+        <i data-lucide="shapes" class="w-4 h-4"></i>
+        <span>Símbolos</span>
+      </button>
+
+      <div class="w-px h-6 bg-slate-800 mx-1"></div>
+
+      <button data-tool="line" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition" title="Linha">
+        <i data-lucide="minus"></i>
+      </button>
+      <button data-tool="arrow" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition" title="Seta">
+        <i data-lucide="arrow-right"></i>
+      </button>
+
+      <div class="w-px h-6 bg-slate-800 mx-1"></div>
+
+      <!-- Freehand Pencil, Smart Draw, Free Text & Eraser -->
+      <button data-tool="pencil" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition" title="Caneta Livre (Desenho suave)">
+        <i data-lucide="pencil"></i>
+      </button>
+      <button data-tool="auto-draw" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition" title="Auto-Ajuste (Rabisque uma forma)">
+        <i data-lucide="wand-2"></i>
+      </button>
+      <button data-tool="text" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition" title="Texto Livre">
+        <i data-lucide="type"></i>
+      </button>
+      <button data-tool="eraser" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition" title="Borracha">
+        <i data-lucide="eraser"></i>
+      </button>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex items-center gap-2">
+      <!-- Importar Projeto / Abrir -->
+      <button id="btn-open-file" class="px-3 py-1.5 rounded bg-sky-500/10 border border-sky-500/30 text-sky-400 hover:bg-sky-500/20 text-sm flex items-center gap-1 transition">
+        <i data-lucide="folder-open" class="w-4 h-4"></i> Abrir
+      </button>
+      <!-- Input de arquivo oculto para upload -->
+      <input type="file" id="input-import-file" accept=".devflow,.json" class="hidden">
+
+      <button id="btn-new" class="px-3 py-1.5 rounded bg-rose-500/10 border border-rose-500/30 text-rose-400 hover:bg-rose-500/20 text-sm flex items-center gap-1 transition">
+        <i data-lucide="file-plus" class="w-4 h-4"></i> Novo
+      </button>
+      <button id="btn-export" class="px-3 py-1.5 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 text-sm flex items-center gap-1 transition">
+        <i data-lucide="download" class="w-4 h-4"></i> Exportar
+      </button>
+    </div>
+  </header>
+
+  <!-- Workspace Area -->
+  <main class="flex-1 relative bg-slate-950 overflow-hidden cursor-crosshair" id="workspace">
+    <canvas id="flowchart-canvas"></canvas>
+
+    <!-- Invisible textarea overlay for quick text editing -->
+    <textarea id="text-editor" class="hidden absolute bg-slate-800 text-emerald-400 border border-emerald-500 rounded p-1 font-mono text-sm outline-none resize-none shadow-2xl z-20"></textarea>
+  </main>
+
+  <!-- Modal Biblioteca de Símbolos -->
+  <div id="symbols-modal" class="hidden fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl max-w-4xl w-full p-6 shadow-2xl flex flex-col gap-4 max-h-[85vh]">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-2">
+          <i data-lucide="shapes" class="w-5 h-5 text-emerald-400"></i>
+          <h3 class="text-lg font-bold text-emerald-400">Biblioteca de Símbolos de Fluxograma</h3>
+        </div>
+        <button id="close-symbols-modal" class="text-slate-400 hover:text-slate-100">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <!-- Barra de Pesquisa de Símbolos -->
+      <div class="relative">
+        <i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-slate-500"></i>
+        <input type="text" id="search-symbol" placeholder="Buscar símbolo (ex: Banco de Dados, Decisão, Documento)..." class="w-full bg-slate-950 border border-slate-800 rounded p-2 pl-9 text-sm text-slate-200 outline-none focus:border-emerald-500 transition">
+      </div>
+
+      <!-- Grid dos Símbolos -->
+      <div id="symbols-grid" class="flex-1 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 p-1">
+        <!-- Renderizado dinamicamente via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Export Modal -->
+  <div id="export-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl max-w-3xl w-full p-6 shadow-2xl flex flex-col gap-4 max-h-[90vh]">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <h3 class="text-lg font-bold text-emerald-400 flex items-center gap-2">
+          <i data-lucide="terminal" class="w-5 h-5"></i> Exportar Fluxograma
+        </h3>
+        <button id="close-modal" class="text-slate-400 hover:text-slate-100">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-auto bg-slate-950 p-4 rounded border border-slate-800 font-mono text-xs text-emerald-400 whitespace-pre" id="ascii-preview">
+        <!-- Generated ASCII output goes here -->
+      </div>
+
+      <div class="flex flex-wrap gap-2 justify-end pt-2 border-t border-slate-800">
+        <button id="btn-copy-ascii" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded flex items-center gap-2 text-sm transition">
+          <i data-lucide="copy" class="w-4 h-4"></i> Copiar ASCII
+        </button>
+
+        <!-- Botão Arquivo Editável (.devflow) -->
+        <button id="btn-download-editable" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-medium rounded flex items-center gap-2 text-sm transition">
+          <i data-lucide="file-json" class="w-4 h-4"></i> Arquivo Editável
+        </button>
+
+        <button id="btn-download-md" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded flex items-center gap-2 text-sm transition">
+          <i data-lucide="file-text" class="w-4 h-4"></i> Baixar .md
+        </button>
+        <button id="btn-download-img" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded flex items-center gap-2 text-sm transition">
+          <i data-lucide="image" class="w-4 h-4"></i> Baixar Imagem
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/storage.js"></script>
+  <script src="js/shapes.js"></script>
+  <script src="js/recognizer.js"></script>
+  <script src="js/ascii.js"></script>
+  <script src="js/canvas.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
