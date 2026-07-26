@@ -37,11 +37,17 @@ document.addEventListener('DOMContentLoaded', () => {
     { id: 'comment', name: 'Comentário / Anotação' }
   ];
 
-  // Alternar Ferramentas
+  // Alternar Ferramentas com Suporte Touch (Clique na ferramenta de zoom ativa alterna entre + / -)
   const toolButtons = document.querySelectorAll('.tool-btn');
   toolButtons.forEach(btn => {
     btn.addEventListener('click', () => {
       const selectedTool = btn.dataset.tool;
+
+      if (selectedTool === 'zoom' && canvasMgr.currentTool === 'zoom') {
+        canvasMgr.toggleZoomMode();
+        return;
+      }
+
       toolButtons.forEach(b => {
         if (b.dataset.tool === selectedTool) {
           b.classList.add('active-tool');
@@ -49,24 +55,29 @@ document.addEventListener('DOMContentLoaded', () => {
           b.classList.remove('active-tool');
         }
       });
+
       canvasMgr.currentTool = selectedTool;
       canvasMgr.updateZoomIcon();
     });
   });
 
-  // Resetar Zoom
+  // Resetar Zoom ou Alternar Modo + / - ao clicar na porcentagem
   const zoomText = document.getElementById('zoom-level-text');
   if (zoomText) {
     zoomText.addEventListener('click', () => {
-      canvasMgr.zoom = 1.0;
-      canvasMgr.panX = 0;
-      canvasMgr.panY = 0;
-      canvasMgr.updateZoomDisplay();
-      canvasMgr.render();
+      if (canvasMgr.currentTool === 'zoom') {
+        canvasMgr.toggleZoomMode();
+      } else {
+        canvasMgr.zoom = 1.0;
+        canvasMgr.panX = 0;
+        canvasMgr.panY = 0;
+        canvasMgr.updateZoomDisplay();
+        canvasMgr.render();
+      }
     });
   }
 
-  // Modal Biblioteca de Símbolos com Preview em Mini-Canvas
+  // Modal Biblioteca de Símbolos com Preview
   const symbolsModal = document.getElementById('symbols-modal');
   const btnSymbolLibrary = document.getElementById('btn-symbol-library');
   const closeSymbolsModal = document.getElementById('close-symbols-modal');
@@ -106,7 +117,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
       symbolsGrid.appendChild(card);
 
-      // Renderiza o mini preview vetorial no canvas após inserir no DOM
       setTimeout(() => {
         const pCanvas = document.getElementById(canvasId);
         if (pCanvas) {
@@ -152,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderSymbolsGrid(e.target.value);
   });
 
-  // Funções Auxiliares para Salvamento
+  // Auxiliares para Salvamento
   async function saveWithSystemDialog(blob, defaultName, types) {
     if ('showSaveFilePicker' in window) {
       try {

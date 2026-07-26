@@ -22,6 +22,11 @@ class CanvasManager {
     this.maxZoom = 3.0;
 
     this.isShiftPressed = false;
+    this.zoomMode = 'in'; // 'in' ou 'out' (Utilizado para controle touch)
+
+    // Gestos Touch (Pinch Zoom)
+    this.initialPinchDistance = null;
+    this.initialPinchZoom = 1.0;
 
     // Histórico para Undo/Redo
     this.undoStack = [];
@@ -115,6 +120,11 @@ class CanvasManager {
     }
   }
 
+  toggleZoomMode() {
+    this.zoomMode = this.zoomMode === 'in' ? 'out' : 'in';
+    this.updateZoomIcon();
+  }
+
   setupKeyboardShortcuts() {
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Shift') {
@@ -153,9 +163,10 @@ class CanvasManager {
 
   updateZoomIcon() {
     const zoomIcons = document.querySelectorAll('.zoom-icon-target');
+    const isOut = this.isShiftPressed || this.zoomMode === 'out';
     zoomIcons.forEach(icon => {
       if (this.currentTool === 'zoom') {
-        icon.setAttribute('data-lucide', this.isShiftPressed ? 'zoom-out' : 'zoom-in');
+        icon.setAttribute('data-lucide', isOut ? 'zoom-out' : 'zoom-in');
         lucide.createIcons();
       }
     });
@@ -195,34 +206,62 @@ class CanvasManager {
     }, { passive: false });
   }
 
+  // Mapeamento Avançado de Gestos Touch (Touch Single + Pinch Zoom Multi-touch)
   setupTouchEvents() {
-    const getTouchPos = (e) => {
-      const touch = e.touches[0] || e.changedTouches[0];
+    const getTouchPos = (touch) => {
       return { clientX: touch.clientX, clientY: touch.clientY, movementX: 0, movementY: 0 };
     };
 
     let lastTouch = null;
 
+    const getDistance = (t1, t2) => {
+      const dx = t1.clientX - t2.clientX;
+      const dy = t1.clientY - t2.clientY;
+      return Math.hypot(dx, dy);
+    };
+
     this.canvas.addEventListener('touchstart', (e) => {
       if (e.touches.length === 1) {
-        lastTouch = getTouchPos(e);
+        this.initialPinchDistance = null;
+        lastTouch = getTouchPos(e.touches[0]);
         this.onMouseDown(lastTouch);
+      } else if (e.touches.length === 2) {
+        // Inicializa o Pinch-to-Zoom com 2 dedos
+        this.isDrawing = false;
+        this.initialPinchDistance = getDistance(e.touches[0], e.touches[1]);
+        this.initialPinchZoom = this.zoom;
       }
     }, { passive: false });
 
     this.canvas.addEventListener('touchmove', (e) => {
-      if (e.touches.length === 1 && lastTouch) {
-        const touch = getTouchPos(e);
+      if (e.touches.length === 1 && lastTouch && !this.initialPinchDistance) {
+        const touch = getTouchPos(e.touches[0]);
         touch.movementX = touch.clientX - lastTouch.clientX;
         touch.movementY = touch.clientY - lastTouch.clientY;
         lastTouch = touch;
         this.onMouseMove(touch);
+      } else if (e.touches.length === 2 && this.initialPinchDistance) {
+        // Aplica o Zoom dinâmico proporcional à distância dos dois dedos
+        const currentDistance = getDistance(e.touches[0], e.touches[1]);
+        const rect = this.canvas.getBoundingClientRect();
+        
+        const centerScreenX = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left;
+        const centerScreenY = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top;
+
+        const scaleRatio = currentDistance / this.initialPinchDistance;
+        const targetZoom = this.initialPinchZoom * scaleRatio;
+        const delta = targetZoom - this.zoom;
+
+        this.zoomAt(centerScreenX, centerScreenY, delta);
       }
     }, { passive: false });
 
-    this.canvas.addEventListener('touchend', () => {
-      this.onMouseUp();
-      lastTouch = null;
+    this.canvas.addEventListener('touchend', (e) => {
+      if (e.touches.length === 0) {
+        this.onMouseUp();
+        lastTouch = null;
+        this.initialPinchDistance = null;
+      }
     });
   }
 
@@ -276,7 +315,8 @@ class CanvasManager {
     const { x, y, screenX, screenY } = coords;
 
     if (this.currentTool === 'zoom') {
-      const delta = this.isShiftPressed ? -0.2 : 0.2;
+      const isZoomOut = this.isShiftPressed || this.zoomMode === 'out';
+      const delta = isZoomOut ? -0.2 : 0.2;
       this.zoomAt(screenX, screenY, delta);
       return;
     }
@@ -358,7 +398,8 @@ class CanvasManager {
     const { x, y } = this.getCoords(e);
 
     if (this.currentTool === 'zoom') {
-      this.canvas.style.cursor = this.isShiftPressed ? 'zoom-out' : 'zoom-in';
+      const isZoomOut = this.isShiftPressed || this.zoomMode === 'out';
+      this.canvas.style.cursor = isZoomOut ? 'zoom-out' : 'zoom-in';
       return;
     }
 
@@ -460,7 +501,6 @@ class CanvasManager {
     if (!this.isDrawing) return;
     this.isDrawing = false;
 
-    // CANETA LIVRE (PENCIL): Salva o rabisco SEM abrir o leitor de texto e SEM trocar de ferramenta
     if (this.currentTool === 'pencil' && this.freehandPoints.length > 1) {
       const smoothed = this.smoothPoints(this.freehandPoints);
 
