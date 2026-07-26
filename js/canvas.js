@@ -460,6 +460,7 @@ class CanvasManager {
     if (!this.isDrawing) return;
     this.isDrawing = false;
 
+    // CANETA LIVRE (PENCIL): Salva o rabisco SEM abrir o leitor de texto e SEM trocar de ferramenta
     if (this.currentTool === 'pencil' && this.freehandPoints.length > 1) {
       const smoothed = this.smoothPoints(this.freehandPoints);
 
@@ -497,8 +498,6 @@ class CanvasManager {
       this.saveHistory();
       this.freehandPoints = [];
       this.render();
-
-      this.openTextEditor(pencilShape);
       return;
     }
 
