@@ -122,7 +122,7 @@ class CanvasManager {
 
   getHandleAtPoint(x, y, shape) {
     if (!shape || !shape.selected) return null;
-    const handles = ShapeRenderer.getHandles(shape);
+    const handles = ShapeRenderer.getHandles(shape, this.elements);
     const threshold = 10;
 
     for (const [key, handle] of Object.entries(handles)) {
@@ -182,7 +182,17 @@ class CanvasManager {
         const handleKey = this.getHandleAtPoint(x, y, selectedEl);
         if (handleKey) {
           this.activeElement = selectedEl;
-          this.activeHandle = handleKey;
+
+          // Se clicou no handle do meio de um segmento, insere uma nova DOBRA (waypoint)
+          if (handleKey.startsWith('mid_')) {
+            const segmentIdx = parseInt(handleKey.split('_')[1], 10);
+            if (!this.activeElement.waypoints) this.activeElement.waypoints = [];
+            
+            this.activeElement.waypoints.splice(segmentIdx, 0, { x, y });
+            this.activeHandle = `waypoint_${segmentIdx}`;
+          } else {
+            this.activeHandle = handleKey;
+          }
           return;
         }
       }
@@ -211,6 +221,7 @@ class CanvasManager {
       width: 10,
       height: 10,
       text: '',
+      waypoints: [],
       startConnectedTo: startShape ? startShape.id : null,
       endConnectedTo: null
     };
@@ -224,7 +235,7 @@ class CanvasManager {
       if (selectedEl) {
         const handleKey = this.getHandleAtPoint(x, y, selectedEl);
         if (handleKey) {
-          this.canvas.style.cursor = ['tl', 'br'].includes(handleKey) ? 'nwse-resize' : 'nesw-resize';
+          this.canvas.style.cursor = 'pointer';
           return;
         }
       }
@@ -251,8 +262,15 @@ class CanvasManager {
         if (this.activeHandle) {
           this.resizeElementWithHandle(this.activeElement, this.activeHandle, x, y);
         } else {
+          // Mover elemento inteiro + seus waypoints/dobras
           this.activeElement.x += e.movementX;
           this.activeElement.y += e.movementY;
+          if (this.activeElement.waypoints) {
+            this.activeElement.waypoints.forEach(wp => {
+              wp.x += e.movementX;
+              wp.y += e.movementY;
+            });
+          }
         }
         this.render();
       } else {
@@ -268,14 +286,17 @@ class CanvasManager {
     if (['line', 'arrow'].includes(el.type)) {
       if (handle === 'start') {
         el.startConnectedTo = null;
-        el.width += (el.x - x);
-        el.height += (el.y - y);
         el.x = x;
         el.y = y;
       } else if (handle === 'end') {
         el.endConnectedTo = null;
         el.width = x - el.x;
         el.height = y - el.y;
+      } else if (handle.startsWith('waypoint_')) {
+        const wpIdx = parseInt(handle.split('_')[1], 10);
+        if (el.waypoints && el.waypoints[wpIdx]) {
+          el.waypoints[wpIdx] = { x, y };
+        }
       }
       return;
     }
@@ -431,8 +452,22 @@ class CanvasManager {
 
   onDoubleClick(e) {
     const { x, y } = this.getCoords(e);
-    const target = [...this.elements].reverse().find(el => this.isPointInside(x, y, el));
+    
+    // Se der duplo clique sobre um ponto de dobra (waypoint), remove essa dobra
+    const selectedEl = this.elements.find(el => el.selected && ['line', 'arrow'].includes(el.type));
+    if (selectedEl && selectedEl.waypoints) {
+      const handleKey = this.getHandleAtPoint(x, y, selectedEl);
+      if (handleKey && handleKey.startsWith('waypoint_')) {
+        const wpIdx = parseInt(handleKey.split('_')[1], 10);
+        selectedEl.waypoints.splice(wpIdx, 1);
+        Storage.save(this.elements);
+        this.saveHistory();
+        this.render();
+        return;
+      }
+    }
 
+    const target = [...this.elements].reverse().find(el => this.isPointInside(x, y, el));
     if (target) {
       this.openTextEditor(target);
     }
@@ -493,13 +528,20 @@ class CanvasManager {
 
   isPointInside(x, y, el) {
     if (['line', 'arrow'].includes(el.type)) {
-      const x1 = el.x;
-      const y1 = el.y;
-      const x2 = el.x + el.width;
-      const y2 = el.y + el.height;
-      const len = Math.hypot(x2 - x1, y2 - y1) || 1;
-      const dist = Math.abs((y2 - y1) * x - (x2 - x1) * y + x2 * y1 - y2 * x1) / len;
-      return dist < 12;
+      const waypoints = ShapeRenderer.getLineWaypoints(el, this.elements);
+      for (let i = 0; i < waypoints.length - 1; i++) {
+        const x1 = waypoints[i].x;
+        const y1 = waypoints[i].y;
+        const x2 = waypoints[i + 1].x;
+        const y2 = waypoints[i + 1].y;
+        const len = Math.hypot(x2 - x1, y2 - y1) || 1;
+        const dist = Math.abs((y2 - y1) * x - (x2 - x1) * y + x2 * y1 - y2 * x1) / len;
+        
+        // Checa se o ponto do clique está no intervalo do segmento
+        const dot = ((x - x1) * (x2 - x1) + (y - y1) * (y2 - y1)) / (len * len);
+        if (dist < 12 && dot >= 0 && dot <= 1) return true;
+      }
+      return false;
     }
 
     return x >= el.x && x <= el.x + el.width && y >= el.y && y <= el.y + el.height;
