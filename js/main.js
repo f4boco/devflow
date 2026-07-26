@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
     { id: 'finalization', name: 'Finalização' }
   ];
 
-  // Alternar Ferramentas (Sincronizado entre Desktop e Mobile Toolbar)
+  // Alternar Ferramentas
   const toolButtons = document.querySelectorAll('.tool-btn');
   toolButtons.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -85,10 +85,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Modal Biblioteca de Símbolos (Desktop + Mobile)
+  // Modal Biblioteca de Símbolos
   const symbolsModal = document.getElementById('symbols-modal');
-  const btnSymbolDesktop = document.getElementById('btn-symbol-library-desktop');
-  const btnSymbolMobile = document.getElementById('btn-symbol-library-mobile');
+  const btnSymbolLibrary = document.getElementById('btn-symbol-library');
   const closeSymbolsModal = document.getElementById('close-symbols-modal');
   const symbolsGrid = document.getElementById('symbols-grid');
   const searchInput = document.getElementById('search-symbol');
@@ -121,13 +120,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  const openModalHandler = () => {
-    renderSymbolsGrid();
-    symbolsModal.classList.remove('hidden');
-  };
-
-  if (btnSymbolDesktop) btnSymbolDesktop.addEventListener('click', openModalHandler);
-  if (btnSymbolMobile) btnSymbolMobile.addEventListener('click', openModalHandler);
+  if (btnSymbolLibrary) {
+    btnSymbolLibrary.addEventListener('click', () => {
+      renderSymbolsGrid();
+      symbolsModal.classList.remove('hidden');
+    });
+  }
 
   closeSymbolsModal.addEventListener('click', () => {
     symbolsModal.classList.add('hidden');
