@@ -6,12 +6,21 @@
 
 /* Tool selection active state */
 .tool-btn.active-tool {
-  background-color: rgba(16, 185, 129, 0.15);
+  background-color: rgba(16, 185, 129, 0.18);
   color: #10b981;
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  border: 1px solid rgba(16, 185, 129, 0.4);
 }
 
-/* Scrollbar customization for code aesthetics */
+/* Esconde barras de rolagem na barra de ferramentas para um visual nativo */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Personalização global de scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;

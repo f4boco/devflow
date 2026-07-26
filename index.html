@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>DevFlow - Algorithmic Flowcharts</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -16,113 +16,172 @@
 </head>
 <body class="bg-slate-900 text-slate-100 h-screen w-screen overflow-hidden flex flex-col font-mono select-none">
 
-  <!-- Header / Top Toolbar -->
-  <header class="h-14 border-b border-slate-800 bg-slate-950/80 backdrop-blur px-4 flex items-center justify-between z-10">
-    <div class="flex items-center gap-2">
-      <div class="w-3 h-3 rounded-full bg-emerald-500"></div>
-      <span class="font-bold text-lg tracking-wider text-emerald-400">&lt;DevFlow/&gt;</span>
+  <!-- Top Header Base (Ações Globais + Logo) -->
+  <header class="h-14 border-b border-slate-800 bg-slate-950/90 backdrop-blur px-3 sm:px-4 flex items-center justify-between z-10 shrink-0">
+    <!-- Brand / Logo -->
+    <div class="flex items-center gap-2 shrink-0">
+      <div class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
+      <span class="font-bold text-base sm:text-lg tracking-wider text-emerald-400 font-mono">&lt;DevFlow/&gt;</span>
     </div>
 
-    <!-- Tools Bar -->
-    <div class="flex items-center bg-slate-900 border border-slate-800 rounded-lg p-1 gap-1 shadow-lg overflow-x-auto">
-      <button data-tool="hand" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition" title="Mão / Pan (H)">
-        <i data-lucide="hand"></i>
+    <!-- Desktop Toolbar (Oculta em Telas Muito Pequenas, posicionada no centro no Desktop) -->
+    <div class="hidden md:flex items-center bg-slate-900 border border-slate-800 rounded-lg p-1 gap-1 shadow-lg max-w-full overflow-x-auto scrollbar-none">
+      <!-- Botões de Ferramenta -->
+      <button data-tool="hand" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition min-w-[36px] min-h-[36px] flex items-center justify-center" title="Mão / Pan (H)">
+        <i data-lucide="hand" class="w-4 h-4"></i>
       </button>
 
-      <!-- Ferramenta de Zoom -->
-      <button data-tool="zoom" id="btn-zoom-tool" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition" title="Zoom In (Clique) / Zoom Out (Shift+Clique) (Z)">
-        <i data-lucide="zoom-in" id="zoom-icon"></i>
+      <button data-tool="zoom" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition min-w-[36px] min-h-[36px] flex items-center justify-center" title="Zoom In (Clique) / Zoom Out (Shift+Clique) (Z)">
+        <i data-lucide="zoom-in" class="zoom-icon-target w-4 h-4"></i>
       </button>
 
-      <button data-tool="select" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition active-tool" title="Selecionar (S)">
-        <i data-lucide="mouse-pointer"></i>
+      <button data-tool="select" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition active-tool min-w-[36px] min-h-[36px] flex items-center justify-center" title="Selecionar (S)">
+        <i data-lucide="mouse-pointer" class="w-4 h-4"></i>
       </button>
       
-      <div class="w-px h-6 bg-slate-800 mx-1"></div>
+      <div class="w-px h-6 bg-slate-800 mx-1 shrink-0"></div>
 
-      <!-- Quick Flowchart Shapes -->
-      <button data-tool="start-end" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition flex items-center justify-center" title="Início / Fim (Pílula)">
-        <svg class="w-6 h-6 stroke-current fill-none stroke-[2]" viewBox="0 0 24 24">
+      <!-- Quick Shapes -->
+      <button data-tool="start-end" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition flex items-center justify-center min-w-[36px] min-h-[36px]" title="Início / Fim (Pílula)">
+        <svg class="w-5 h-5 stroke-current fill-none stroke-[2]" viewBox="0 0 24 24">
           <rect x="3" y="7" width="18" height="10" rx="5" ry="5" />
         </svg>
       </button>
 
-      <button data-tool="process" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition flex items-center justify-center" title="Processo (Retângulo)">
-        <svg class="w-6 h-6 stroke-current fill-none stroke-[2]" viewBox="0 0 24 24">
+      <button data-tool="process" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition flex items-center justify-center min-w-[36px] min-h-[36px]" title="Processo (Retângulo)">
+        <svg class="w-5 h-5 stroke-current fill-none stroke-[2]" viewBox="0 0 24 24">
           <rect x="3" y="6" width="18" height="12" rx="1" />
         </svg>
       </button>
       
-      <button data-tool="input-output" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition flex items-center justify-center" title="Entrada / Saída (Paralelogramo)">
-        <svg class="w-6 h-6 stroke-current fill-none stroke-[2]" viewBox="0 0 24 24">
+      <button data-tool="input-output" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition flex items-center justify-center min-w-[36px] min-h-[36px]" title="Entrada / Saída (Paralelogramo)">
+        <svg class="w-5 h-5 stroke-current fill-none stroke-[2]" viewBox="0 0 24 24">
           <polygon points="6,6 21,6 18,18 3,18" />
         </svg>
       </button>
       
-      <button data-tool="condition" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition flex items-center justify-center" title="Condição / Decisão (Losango)">
-        <svg class="w-6 h-6 stroke-current fill-none stroke-[2]" viewBox="0 0 24 24">
+      <button data-tool="condition" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition flex items-center justify-center min-w-[36px] min-h-[36px]" title="Condição / Decisão (Losango)">
+        <svg class="w-5 h-5 stroke-current fill-none stroke-[2]" viewBox="0 0 24 24">
           <polygon points="12,3 21,12 12,21 3,12" />
         </svg>
       </button>
 
-      <!-- Botão Biblioteca de Símbolos -->
-      <button id="btn-symbol-library" class="p-2 rounded hover:bg-slate-800 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 text-xs font-semibold transition" title="Biblioteca de Símbolos Completa">
+      <button id="btn-symbol-library-desktop" class="p-2 rounded hover:bg-slate-800 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 text-xs font-semibold transition shrink-0" title="Biblioteca de Símbolos Completa">
         <i data-lucide="shapes" class="w-4 h-4"></i>
         <span>Símbolos</span>
       </button>
 
-      <div class="w-px h-6 bg-slate-800 mx-1"></div>
+      <div class="w-px h-6 bg-slate-800 mx-1 shrink-0"></div>
 
-      <button data-tool="line" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition" title="Linha">
-        <i data-lucide="minus"></i>
+      <button data-tool="line" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition min-w-[36px] min-h-[36px] flex items-center justify-center" title="Linha">
+        <i data-lucide="minus" class="w-4 h-4"></i>
       </button>
-      <button data-tool="arrow" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition" title="Seta">
-        <i data-lucide="arrow-right"></i>
+      <button data-tool="arrow" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition min-w-[36px] min-h-[36px] flex items-center justify-center" title="Seta">
+        <i data-lucide="arrow-right" class="w-4 h-4"></i>
       </button>
 
-      <div class="w-px h-6 bg-slate-800 mx-1"></div>
+      <div class="w-px h-6 bg-slate-800 mx-1 shrink-0"></div>
 
-      <!-- Freehand Pencil, Smart Draw, Free Text & Eraser -->
-      <button data-tool="pencil" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition" title="Caneta Livre (Desenho suave)">
-        <i data-lucide="pencil"></i>
+      <!-- Pencil, Smart Draw, Text & Eraser -->
+      <button data-tool="pencil" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition min-w-[36px] min-h-[36px] flex items-center justify-center" title="Caneta Livre (Desenho suave)">
+        <i data-lucide="pencil" class="w-4 h-4"></i>
       </button>
-      <button data-tool="auto-draw" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition" title="Auto-Ajuste (Rabisque uma forma)">
-        <i data-lucide="wand-2"></i>
+      <button data-tool="auto-draw" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition min-w-[36px] min-h-[36px] flex items-center justify-center" title="Auto-Ajuste (Rabisque uma forma)">
+        <i data-lucide="wand-2" class="w-4 h-4"></i>
       </button>
-      <button data-tool="text" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition" title="Texto Livre">
-        <i data-lucide="type"></i>
+      <button data-tool="text" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition min-w-[36px] min-h-[36px] flex items-center justify-center" title="Texto Livre">
+        <i data-lucide="type" class="w-4 h-4"></i>
       </button>
-      <button data-tool="eraser" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition" title="Borracha">
-        <i data-lucide="eraser"></i>
+      <button data-tool="eraser" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition min-w-[36px] min-h-[36px] flex items-center justify-center" title="Borracha">
+        <i data-lucide="eraser" class="w-4 h-4"></i>
       </button>
     </div>
 
-    <!-- Actions & Zoom Display -->
-    <div class="flex items-center gap-2">
+    <!-- Right Actions / System Menu -->
+    <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
       <!-- Nível de Zoom -->
       <span id="zoom-level-text" class="text-xs font-mono text-slate-400 bg-slate-900 border border-slate-800 px-2 py-1 rounded select-none cursor-pointer hover:text-emerald-400 transition" title="Clique para resetar em 100%">100%</span>
 
-      <button id="btn-open-file" class="px-3 py-1.5 rounded bg-sky-500/10 border border-sky-500/30 text-sky-400 hover:bg-sky-500/20 text-sm flex items-center gap-1 transition">
-        <i data-lucide="folder-open" class="w-4 h-4"></i> Abrir
+      <button id="btn-open-file" class="p-2 sm:px-3 sm:py-1.5 rounded bg-sky-500/10 border border-sky-500/30 text-sky-400 hover:bg-sky-500/20 text-xs sm:text-sm flex items-center gap-1 transition" title="Abrir arquivo .devflow">
+        <i data-lucide="folder-open" class="w-4 h-4"></i>
+        <span class="hidden sm:inline">Abrir</span>
       </button>
       <input type="file" id="input-import-file" accept=".devflow,.json" class="hidden">
 
-      <button id="btn-new" class="px-3 py-1.5 rounded bg-rose-500/10 border border-rose-500/30 text-rose-400 hover:bg-rose-500/20 text-sm flex items-center gap-1 transition">
-        <i data-lucide="file-plus" class="w-4 h-4"></i> Novo
+      <button id="btn-new" class="p-2 sm:px-3 sm:py-1.5 rounded bg-rose-500/10 border border-rose-500/30 text-rose-400 hover:bg-rose-500/20 text-xs sm:text-sm flex items-center gap-1 transition" title="Novo Fluxograma">
+        <i data-lucide="file-plus" class="w-4 h-4"></i>
+        <span class="hidden sm:inline">Novo</span>
       </button>
-      <button id="btn-export" class="px-3 py-1.5 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 text-sm flex items-center gap-1 transition">
-        <i data-lucide="download" class="w-4 h-4"></i> Exportar
+
+      <button id="btn-export" class="p-2 sm:px-3 sm:py-1.5 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 text-xs sm:text-sm flex items-center gap-1 transition" title="Exportar Fluxograma">
+        <i data-lucide="download" class="w-4 h-4"></i>
+        <span class="hidden sm:inline">Exportar</span>
       </button>
     </div>
   </header>
 
+  <!-- Mobile Floating Toolbar (Aparece na parte inferior apenas em telas menores que MD) -->
+  <div class="md:hidden fixed bottom-3 left-1/2 -translate-x-1/2 z-30 max-w-[95vw] bg-slate-900/90 backdrop-blur-md border border-slate-800 rounded-xl p-1.5 shadow-2xl flex items-center gap-1 overflow-x-auto scrollbar-none">
+    <button data-tool="hand" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition shrink-0 min-w-[38px] min-h-[38px] flex items-center justify-center">
+      <i data-lucide="hand" class="w-5 h-5"></i>
+    </button>
+    <button data-tool="zoom" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition shrink-0 min-w-[38px] min-h-[38px] flex items-center justify-center">
+      <i data-lucide="zoom-in" class="zoom-icon-target w-5 h-5"></i>
+    </button>
+    <button data-tool="select" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition active-tool shrink-0 min-w-[38px] min-h-[38px] flex items-center justify-center">
+      <i data-lucide="mouse-pointer" class="w-5 h-5"></i>
+    </button>
+
+    <div class="w-px h-6 bg-slate-800 mx-0.5 shrink-0"></div>
+
+    <button data-tool="start-end" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition shrink-0 min-w-[38px] min-h-[38px] flex items-center justify-center">
+      <svg class="w-5 h-5 stroke-current fill-none stroke-[2]" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="10" rx="5" ry="5" /></svg>
+    </button>
+    <button data-tool="process" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition shrink-0 min-w-[38px] min-h-[38px] flex items-center justify-center">
+      <svg class="w-5 h-5 stroke-current fill-none stroke-[2]" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="1" /></svg>
+    </button>
+    <button data-tool="input-output" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition shrink-0 min-w-[38px] min-h-[38px] flex items-center justify-center">
+      <svg class="w-5 h-5 stroke-current fill-none stroke-[2]" viewBox="0 0 24 24"><polygon points="6,6 21,6 18,18 3,18" /></svg>
+    </button>
+    <button data-tool="condition" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition shrink-0 min-w-[38px] min-h-[38px] flex items-center justify-center">
+      <svg class="w-5 h-5 stroke-current fill-none stroke-[2]" viewBox="0 0 24 24"><polygon points="12,3 21,12 12,21 3,12" /></svg>
+    </button>
+
+    <button id="btn-symbol-library-mobile" class="p-2 rounded hover:bg-slate-800 text-emerald-400 border border-emerald-500/30 flex items-center justify-center shrink-0 min-w-[38px] min-h-[38px]">
+      <i data-lucide="shapes" class="w-5 h-5"></i>
+    </button>
+
+    <div class="w-px h-6 bg-slate-800 mx-0.5 shrink-0"></div>
+
+    <button data-tool="line" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition shrink-0 min-w-[38px] min-h-[38px] flex items-center justify-center">
+      <i data-lucide="minus" class="w-5 h-5"></i>
+    </button>
+    <button data-tool="arrow" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition shrink-0 min-w-[38px] min-h-[38px] flex items-center justify-center">
+      <i data-lucide="arrow-right" class="w-5 h-5"></i>
+    </button>
+
+    <div class="w-px h-6 bg-slate-800 mx-0.5 shrink-0"></div>
+
+    <button data-tool="pencil" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition shrink-0 min-w-[38px] min-h-[38px] flex items-center justify-center">
+      <i data-lucide="pencil" class="w-5 h-5"></i>
+    </button>
+    <button data-tool="auto-draw" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition shrink-0 min-w-[38px] min-h-[38px] flex items-center justify-center">
+      <i data-lucide="wand-2" class="w-5 h-5"></i>
+    </button>
+    <button data-tool="text" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition shrink-0 min-w-[38px] min-h-[38px] flex items-center justify-center">
+      <i data-lucide="type" class="w-5 h-5"></i>
+    </button>
+    <button data-tool="eraser" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition shrink-0 min-w-[38px] min-h-[38px] flex items-center justify-center">
+      <i data-lucide="eraser" class="w-5 h-5"></i>
+    </button>
+  </div>
+
   <!-- Workspace Area -->
-  <main class="flex-1 relative bg-slate-950 overflow-hidden cursor-crosshair" id="workspace">
+  <main class="flex-1 relative bg-slate-950 overflow-hidden cursor-crosshair touch-none" id="workspace">
     <canvas id="flowchart-canvas"></canvas>
 
     <!-- Overlay de Edição de Texto com Barra Flutuante de Alinhamento -->
     <div id="text-editor-container" class="hidden absolute z-20 flex flex-col gap-1 items-start">
-      <!-- Toolbar Alinhamento do Texto -->
       <div id="text-align-toolbar" class="flex items-center bg-slate-900 border border-slate-700 rounded p-0.5 shadow-xl text-slate-400">
         <button type="button" data-align="left" class="align-btn p-1 rounded hover:bg-slate-800 hover:text-emerald-400 transition" title="Alinhar à Esquerda">
           <i data-lucide="align-left" class="w-3.5 h-3.5"></i>
@@ -140,57 +199,57 @@
   </main>
 
   <!-- Modal Biblioteca de Símbolos -->
-  <div id="symbols-modal" class="hidden fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-xl max-w-4xl w-full p-6 shadow-2xl flex flex-col gap-4 max-h-[85vh]">
+  <div id="symbols-modal" class="hidden fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl max-w-4xl w-full p-4 sm:p-6 shadow-2xl flex flex-col gap-4 max-h-[85vh]">
       <div class="flex justify-between items-center border-b border-slate-800 pb-3">
         <div class="flex items-center gap-2">
           <i data-lucide="shapes" class="w-5 h-5 text-emerald-400"></i>
-          <h3 class="text-lg font-bold text-emerald-400">Biblioteca de Símbolos de Fluxograma</h3>
+          <h3 class="text-base sm:text-lg font-bold text-emerald-400">Biblioteca de Símbolos</h3>
         </div>
-        <button id="close-symbols-modal" class="text-slate-400 hover:text-slate-100">
-          <i data-lucide="x"></i>
+        <button id="close-symbols-modal" class="text-slate-400 hover:text-slate-100 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
       <div class="relative">
         <i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-slate-500"></i>
-        <input type="text" id="search-symbol" placeholder="Buscar símbolo (ex: Banco de Dados, Decisão, Documento)..." class="w-full bg-slate-950 border border-slate-800 rounded p-2 pl-9 text-sm text-slate-200 outline-none focus:border-emerald-500 transition">
+        <input type="text" id="search-symbol" placeholder="Buscar símbolo..." class="w-full bg-slate-950 border border-slate-800 rounded p-2 pl-9 text-sm text-slate-200 outline-none focus:border-emerald-500 transition">
       </div>
 
-      <div id="symbols-grid" class="flex-1 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 p-1">
+      <div id="symbols-grid" class="flex-1 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 p-1">
         <!-- Renderizado dinamicamente via JS -->
       </div>
     </div>
   </div>
 
   <!-- Export Modal -->
-  <div id="export-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-xl max-w-3xl w-full p-6 shadow-2xl flex flex-col gap-4 max-h-[90vh]">
+  <div id="export-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl max-w-3xl w-full p-4 sm:p-6 shadow-2xl flex flex-col gap-4 max-h-[90vh]">
       <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-        <h3 class="text-lg font-bold text-emerald-400 flex items-center gap-2">
+        <h3 class="text-base sm:text-lg font-bold text-emerald-400 flex items-center gap-2">
           <i data-lucide="terminal" class="w-5 h-5"></i> Exportar Fluxograma
         </h3>
-        <button id="close-modal" class="text-slate-400 hover:text-slate-100">
-          <i data-lucide="x"></i>
+        <button id="close-modal" class="text-slate-400 hover:text-slate-100 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
-      <div class="flex-1 overflow-auto bg-slate-950 p-4 rounded border border-slate-800 font-mono text-xs text-emerald-400 whitespace-pre" id="ascii-preview">
+      <div class="flex-1 overflow-auto bg-slate-950 p-3 sm:p-4 rounded border border-slate-800 font-mono text-xs text-emerald-400 whitespace-pre" id="ascii-preview">
         <!-- Generated ASCII output goes here -->
       </div>
 
       <div class="flex flex-wrap gap-2 justify-end pt-2 border-t border-slate-800">
-        <button id="btn-copy-ascii" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded flex items-center gap-2 text-sm transition">
+        <button id="btn-copy-ascii" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded flex items-center gap-1.5 text-xs sm:text-sm transition">
           <i data-lucide="copy" class="w-4 h-4"></i> Copiar ASCII
         </button>
-        <button id="btn-download-editable" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-medium rounded flex items-center gap-2 text-sm transition">
-          <i data-lucide="file-json" class="w-4 h-4"></i> Arquivo Editável
+        <button id="btn-download-editable" class="px-3 py-2 bg-sky-600 hover:bg-sky-500 text-white font-medium rounded flex items-center gap-1.5 text-xs sm:text-sm transition">
+          <i data-lucide="file-json" class="w-4 h-4"></i> Editável
         </button>
-        <button id="btn-download-md" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded flex items-center gap-2 text-sm transition">
+        <button id="btn-download-md" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded flex items-center gap-1.5 text-xs sm:text-sm transition">
           <i data-lucide="file-text" class="w-4 h-4"></i> Baixar .md
         </button>
-        <button id="btn-download-img" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded flex items-center gap-2 text-sm transition">
-          <i data-lucide="image" class="w-4 h-4"></i> Baixar Imagem
+        <button id="btn-download-img" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded flex items-center gap-1.5 text-xs sm:text-sm transition">
+          <i data-lucide="image" class="w-4 h-4"></i> Imagem
         </button>
       </div>
     </div>

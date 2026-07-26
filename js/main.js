@@ -1,10 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
-  // Inicializar Lucide Icons
   lucide.createIcons();
 
   const canvasMgr = new CanvasManager('flowchart-canvas', 'workspace');
 
-  // Relação completa dos símbolos
   const flowchartSymbols = [
     { id: 'start-end', name: 'Terminador (Início/Fim)' },
     { id: 'process', name: 'Processo' },
@@ -58,18 +56,24 @@ document.addEventListener('DOMContentLoaded', () => {
     { id: 'finalization', name: 'Finalização' }
   ];
 
-  // Alternar Ferramentas
+  // Alternar Ferramentas (Sincronizado entre Desktop e Mobile Toolbar)
   const toolButtons = document.querySelectorAll('.tool-btn');
   toolButtons.forEach(btn => {
     btn.addEventListener('click', () => {
-      toolButtons.forEach(b => b.classList.remove('active-tool'));
-      btn.classList.add('active-tool');
-      canvasMgr.currentTool = btn.dataset.tool;
+      const selectedTool = btn.dataset.tool;
+      toolButtons.forEach(b => {
+        if (b.dataset.tool === selectedTool) {
+          b.classList.add('active-tool');
+        } else {
+          b.classList.remove('active-tool');
+        }
+      });
+      canvasMgr.currentTool = selectedTool;
       canvasMgr.updateZoomIcon();
     });
   });
 
-  // Resetar Zoom para 100% ao clicar na porcentagem
+  // Resetar Zoom
   const zoomText = document.getElementById('zoom-level-text');
   if (zoomText) {
     zoomText.addEventListener('click', () => {
@@ -81,9 +85,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Modal Biblioteca de Símbolos
+  // Modal Biblioteca de Símbolos (Desktop + Mobile)
   const symbolsModal = document.getElementById('symbols-modal');
-  const btnSymbolLibrary = document.getElementById('btn-symbol-library');
+  const btnSymbolDesktop = document.getElementById('btn-symbol-library-desktop');
+  const btnSymbolMobile = document.getElementById('btn-symbol-library-mobile');
   const closeSymbolsModal = document.getElementById('close-symbols-modal');
   const symbolsGrid = document.getElementById('symbols-grid');
   const searchInput = document.getElementById('search-symbol');
@@ -99,7 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     filtered.forEach(s => {
       const card = document.createElement('button');
-      card.className = 'p-3 rounded-lg bg-slate-950 border border-slate-800 hover:border-emerald-500/50 hover:bg-slate-800/50 text-left transition flex flex-col justify-between gap-2 group';
+      card.className = 'p-2.5 rounded-lg bg-slate-950 border border-slate-800 hover:border-emerald-500/50 hover:bg-slate-800/50 text-left transition flex flex-col justify-between gap-1 group';
       
       card.innerHTML = `
         <span class="text-xs font-semibold text-slate-300 group-hover:text-emerald-400 transition">${s.name}</span>
@@ -116,10 +121,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  btnSymbolLibrary.addEventListener('click', () => {
+  const openModalHandler = () => {
     renderSymbolsGrid();
     symbolsModal.classList.remove('hidden');
-  });
+  };
+
+  if (btnSymbolDesktop) btnSymbolDesktop.addEventListener('click', openModalHandler);
+  if (btnSymbolMobile) btnSymbolMobile.addEventListener('click', openModalHandler);
 
   closeSymbolsModal.addEventListener('click', () => {
     symbolsModal.classList.add('hidden');
@@ -129,7 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderSymbolsGrid(e.target.value);
   });
 
-  // Funções Auxiliares para Salvamento com File System Access API
+  // Funções Auxiliares para Salvamento
   async function saveWithSystemDialog(blob, defaultName, types) {
     if ('showSaveFilePicker' in window) {
       try {
@@ -154,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
     URL.revokeObjectURL(url);
   }
 
-  // Importar Arquivo Projeto (.devflow)
+  // Importar Projeto
   const btnOpenFile = document.getElementById('btn-open-file');
   const inputImportFile = document.getElementById('input-import-file');
 
@@ -208,14 +216,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Botão "Novo"
+  // Botão Novo
   document.getElementById('btn-new').addEventListener('click', () => {
     if (confirm('Tem certeza de que deseja apagar o fluxograma atual e começar um novo?')) {
       canvasMgr.clearCanvas();
     }
   });
 
-  // Exportação
+  // Modal Exportação
   const modal = document.getElementById('export-modal');
   const asciiPreview = document.getElementById('ascii-preview');
 

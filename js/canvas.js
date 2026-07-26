@@ -17,13 +17,13 @@ class CanvasManager {
     // Pan & Zoom State
     this.panX = 0;
     this.panY = 0;
-    this.zoom = 1.0; // 100% Zoom inicial
-    this.minZoom = 0.2; // 20% Min
-    this.maxZoom = 3.0; // 300% Max
+    this.zoom = 1.0;
+    this.minZoom = 0.2;
+    this.maxZoom = 3.0;
 
     this.isShiftPressed = false;
 
-    // Histórico para Undo/Redo (Ctrl+Z / Ctrl+Y)
+    // Histórico para Undo/Redo
     this.undoStack = [];
     this.redoStack = [];
     this.saveHistory();
@@ -35,6 +35,7 @@ class CanvasManager {
     this.resize();
     window.addEventListener('resize', () => this.resize());
     this.setupEvents();
+    this.setupTouchEvents();
     this.setupKeyboardShortcuts();
     this.render();
   }
@@ -151,13 +152,13 @@ class CanvasManager {
   }
 
   updateZoomIcon() {
-    const zoomIcon = document.getElementById('zoom-icon');
-    if (zoomIcon) {
+    const zoomIcons = document.querySelectorAll('.zoom-icon-target');
+    zoomIcons.forEach(icon => {
       if (this.currentTool === 'zoom') {
-        zoomIcon.setAttribute('data-lucide', this.isShiftPressed ? 'zoom-out' : 'zoom-in');
+        icon.setAttribute('data-lucide', this.isShiftPressed ? 'zoom-out' : 'zoom-in');
         lucide.createIcons();
       }
-    }
+    });
   }
 
   resize() {
@@ -172,11 +173,9 @@ class CanvasManager {
     this.canvas.addEventListener('mouseup', () => this.onMouseUp());
     this.canvas.addEventListener('dblclick', (e) => this.onDoubleClick(e));
 
-    // Navegação de Tela via Scroll do Mouse (Cima/Baixo e Esquerda/Direita com Shift)
     this.canvas.addEventListener('wheel', (e) => {
       e.preventDefault();
 
-      // Se a tecla Ctrl/Cmd estiver pressionada, aciona Zoom por Scroll
       if (e.ctrlKey || e.metaKey) {
         const rect = this.canvas.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
@@ -186,17 +185,46 @@ class CanvasManager {
         return;
       }
 
-      // Deslocamento da tela (Pan)
       if (e.shiftKey) {
-        // Shift + Scroll -> Move para Esquerda / Direita
         this.panX -= e.deltaY;
       } else {
-        // Scroll Padrão -> Move para Cima / Baixo
         this.panY -= e.deltaY;
       }
 
       this.render();
     }, { passive: false });
+  }
+
+  // Mapeamento de Eventos de Toque em Dispositivos Móveis
+  setupTouchEvents() {
+    const getTouchPos = (e) => {
+      const touch = e.touches[0] || e.changedTouches[0];
+      return { clientX: touch.clientX, clientY: touch.clientY, movementX: 0, movementY: 0 };
+    };
+
+    let lastTouch = null;
+
+    this.canvas.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 1) {
+        lastTouch = getTouchPos(e);
+        this.onMouseDown(lastTouch);
+      }
+    }, { passive: false });
+
+    this.canvas.addEventListener('touchmove', (e) => {
+      if (e.touches.length === 1 && lastTouch) {
+        const touch = getTouchPos(e);
+        touch.movementX = touch.clientX - lastTouch.clientX;
+        touch.movementY = touch.clientY - lastTouch.clientY;
+        lastTouch = touch;
+        this.onMouseMove(touch);
+      }
+    }, { passive: false });
+
+    this.canvas.addEventListener('touchend', () => {
+      this.onMouseUp();
+      lastTouch = null;
+    });
   }
 
   getCoords(e) {
@@ -215,7 +243,7 @@ class CanvasManager {
   getHandleAtPoint(x, y, shape) {
     if (!shape || !shape.selected) return null;
     const handles = ShapeRenderer.getHandles(shape, this.elements);
-    const threshold = 10 / this.zoom;
+    const threshold = 12 / this.zoom;
 
     for (const [key, handle] of Object.entries(handles)) {
       if (Math.hypot(x - handle.x, y - handle.y) <= threshold) {
