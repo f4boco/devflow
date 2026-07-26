@@ -75,6 +75,14 @@ Possibilidades de exportação: em *ASCII*, *Image* e *Arquivo editável*.
 | <kbd>Enter</kbd> (no editor) | Salvar texto e fechar edição |
 | <kbd>Shift</kbd> + <kbd>Enter</kbd> | Quebrar linha dentro do texto |
 
+## 🚀 Live Demo
+
+Experimente a aplicação diretamente no seu navegador, sem necessidade de instalação:
+
+[![GitHub Pages](https://img.shields.io/badge/Acessar%20DevFlow-GitHub%20Pages-10b981?style=for-the-badge&logo=github&logoColor=white)](https://f4boco.github.io/devflow/)
+
+> 🔗 **Link de Acesso Direto:** [https://f4boco.github.io/devflow/](https://f4boco.github.io/devflow/)
+
 ## 🚀 Como Executar o Projeto
 
 Como o DevFlow não possui backend, a instalação é instantânea. Não é necessário Node.js ou ferramentas de build complexas.
