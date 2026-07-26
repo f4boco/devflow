@@ -75,6 +75,19 @@ class CanvasManager {
     }
   }
 
+  // Alterna a ferramenta ativa de volta para 'select' e atualiza os botões da barra
+  resetToSelectTool() {
+    this.currentTool = 'select';
+    const toolButtons = document.querySelectorAll('.tool-btn');
+    toolButtons.forEach(btn => {
+      if (btn.dataset.tool === 'select') {
+        btn.classList.add('active-tool');
+      } else {
+        btn.classList.remove('active-tool');
+      }
+    });
+  }
+
   setupKeyboardShortcuts() {
     window.addEventListener('keydown', (e) => {
       if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
@@ -220,7 +233,7 @@ class CanvasManager {
       width: 10,
       height: 10,
       text: '',
-      textAlign: 'center', // Padrão Centralizado
+      textAlign: 'center',
       waypoints: [],
       startConnectedTo: startShape ? startShape.id : null,
       endConnectedTo: null
@@ -328,6 +341,7 @@ class CanvasManager {
     if (!this.isDrawing) return;
     this.isDrawing = false;
 
+    // Caneta Livre (Pencil) permanece com a ferramenta ativa para continuar desenhando
     if (this.currentTool === 'pencil' && this.freehandPoints.length > 1) {
       const smoothed = this.smoothPoints(this.freehandPoints);
 
@@ -384,6 +398,9 @@ class CanvasManager {
       }
       this.freehandPoints = [];
       this.render();
+
+      // Volta automaticamente para a ferramenta de seleção
+      this.resetToSelectTool();
       return;
     }
 
@@ -423,6 +440,9 @@ class CanvasManager {
         if (!['line', 'arrow'].includes(createdElement.type)) {
           this.openTextEditor(createdElement);
         }
+
+        // Volta automaticamente para a ferramenta de seleção após criar qualquer forma
+        this.resetToSelectTool();
         return;
       }
 
@@ -479,7 +499,6 @@ class CanvasManager {
 
     if (!shape.textAlign) shape.textAlign = 'center';
 
-    // Atualiza botões ativos na toolbar de alinhamento
     const updateAlignButtons = (currentAlign) => {
       alignBtns.forEach(btn => {
         if (btn.dataset.align === currentAlign) {
@@ -495,7 +514,6 @@ class CanvasManager {
 
     editor.value = shape.text || '';
     
-    // Posiciona o container com offset para caber a toolbar de alinhamento em cima
     container.style.left = `${shape.x + this.panX}px`;
     container.style.top = `${shape.y + this.panY - 32}px`;
     container.style.width = `${Math.max(shape.width, 120)}px`;
@@ -524,7 +542,6 @@ class CanvasManager {
     alignToolbar.addEventListener('click', handleAlignClick);
 
     const saveText = (e) => {
-      // Se clicou dentro da toolbar de alinhamento, não encerra a edição
       if (e.relatedTarget && alignToolbar.contains(e.relatedTarget)) {
         return;
       }
