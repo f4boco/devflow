@@ -212,7 +212,7 @@ class CanvasManager {
 
   setupTouchEvents() {
     const getTouchPos = (touch) => {
-      return { clientX: touch.clientX, clientY: touch.clientY, movementX: 0, movementY: 0 };
+      return { clientX: touch.clientX, clientY: touch.clientY, movementX: 0, movementY: 0, shiftKey: this.isShiftPressed };
     };
 
     let lastTouch = null;
@@ -264,7 +264,7 @@ class CanvasManager {
         this.onMouseUp();
         lastTouch = null;
         this.initialPinchDistance = null;
-        this.render(); // Re-renderiza com rugosidade completa ao soltar
+        this.render();
       }
     });
   }
@@ -349,35 +349,49 @@ class CanvasManager {
     }
 
     if (this.currentTool === 'select') {
-      const selectedEl = this.elements.find(el => el.selected);
-      if (selectedEl) {
-        const handleKey = this.getHandleAtPoint(x, y, selectedEl);
-        if (handleKey) {
-          this.activeElement = selectedEl;
+      // 1. Verifica se clicou num handle de algum elemento selecionado
+      const selectedElWithHandle = this.elements.find(el => el.selected && this.getHandleAtPoint(x, y, el));
+      if (selectedElWithHandle) {
+        const handleKey = this.getHandleAtPoint(x, y, selectedElWithHandle);
+        this.activeElement = selectedElWithHandle;
 
-          if (handleKey.startsWith('mid_')) {
-            const segmentIdx = parseInt(handleKey.split('_')[1], 10);
-            if (!this.activeElement.waypoints) this.activeElement.waypoints = [];
-            
-            this.activeElement.waypoints.splice(segmentIdx, 0, { x, y });
-            this.activeHandle = `waypoint_${segmentIdx}`;
-          } else {
-            this.activeHandle = handleKey;
+        if (handleKey.startsWith('mid_')) {
+          const segmentIdx = parseInt(handleKey.split('_')[1], 10);
+          if (!this.activeElement.waypoints) this.activeElement.waypoints = [];
+          this.activeElement.waypoints.splice(segmentIdx, 0, { x, y });
+          this.activeHandle = `waypoint_${segmentIdx}`;
+        } else {
+          this.activeHandle = handleKey;
+        }
+        return;
+      }
+
+      // 2. Busca o elemento clicado (do topo para o fundo)
+      const clicked = [...this.elements].reverse().find(el => this.isPointInside(x, y, el));
+
+      if (e.shiftKey) {
+        // MODO SELEÇÃO MÚLTIPLA (SHIFT PRESSIONADO)
+        if (clicked) {
+          // Alterna a seleção do elemento (se já selecionado desmarca, se não, seleciona)
+          clicked.selected = !clicked.selected;
+          this.activeElement = clicked.selected ? clicked : null;
+        }
+      } else {
+        // MODO SELEÇÃO ÚNICA PADRÃO
+        if (clicked) {
+          if (!clicked.selected) {
+            this.elements.forEach(el => el.selected = false);
+            clicked.selected = true;
           }
-          return;
+          this.activeElement = clicked;
+        } else {
+          // Clicou no vazio sem shift: limpa toda a seleção
+          this.elements.forEach(el => el.selected = false);
+          this.activeElement = null;
         }
       }
 
-      this.elements.forEach(el => el.selected = false);
-      const clicked = [...this.elements].reverse().find(el => this.isPointInside(x, y, el));
-      if (clicked) {
-        clicked.selected = true;
-        this.activeElement = clicked;
-        this.activeHandle = null;
-      } else {
-        this.activeElement = null;
-        this.activeHandle = null;
-      }
+      this.activeHandle = null;
       this.requestRender();
       return;
     }
@@ -437,17 +451,25 @@ class CanvasManager {
 
     if (this.activeElement) {
       if (this.currentTool === 'select') {
+        const dx = e.movementX / this.zoom;
+        const dy = e.movementY / this.zoom;
+
         if (this.activeHandle) {
+          // Redimensionamento individual por handle
           this.resizeElementWithHandle(this.activeElement, this.activeHandle, x, y);
         } else {
-          this.activeElement.x += e.movementX / this.zoom;
-          this.activeElement.y += e.movementY / this.zoom;
-          if (this.activeElement.waypoints) {
-            this.activeElement.waypoints.forEach(wp => {
-              wp.x += e.movementX / this.zoom;
-              wp.y += e.movementY / this.zoom;
-            });
-          }
+          // Movimentação em Bloco de todos os elementos selecionados
+          const selectedElements = this.elements.filter(el => el.selected);
+          selectedElements.forEach(el => {
+            el.x += dx;
+            el.y += dy;
+            if (el.waypoints) {
+              el.waypoints.forEach(wp => {
+                wp.x += dx;
+                wp.y += dy;
+              });
+            }
+          });
         }
         this.requestRender();
       } else {
@@ -795,7 +817,6 @@ class CanvasManager {
     this.ctx.restore();
   }
 
-  // Agendamento otimizado de Redesenho no ritmo da taxa de atualização do monitor/tela (60fps)
   requestRender() {
     if (!this.renderRequested) {
       this.renderRequested = true;
