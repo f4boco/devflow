@@ -1,10 +1,13 @@
-// Renderização das formas Hand-Drawn via Rough.js com Suporte a Zoom, Alinhamento, Texto Livre e Preview
+// Renderização das formas Hand-Drawn com Otimização de Performance para Telas Touch
 const ShapeRenderer = {
-  draw(rc, ctx, shape, elements = []) {
+  draw(rc, ctx, shape, elements = [], isInteracting = false) {
+    // Se o usuário estiver arrastando/interagindo no touch, reduz a rugosidade para rodar a 60 FPS
+    const roughness = isInteracting ? 0.4 : 1.2;
+
     const options = {
       stroke: '#10b981',
       strokeWidth: 2,
-      roughness: 1.2,
+      roughness: roughness,
       bowing: 1,
       fill: shape.selected ? 'rgba(16, 185, 129, 0.08)' : 'transparent',
       fillStyle: 'solid'
@@ -42,7 +45,7 @@ const ShapeRenderer = {
         );
       }
     } else if (type === 'text') {
-      // Texto Livre PURAMENTE transparente — não desenha nenhuma forma geométrica ou borda por trás
+      // Texto Livre sem borda
     } else {
       switch (type) {
         case 'start-end':
@@ -215,10 +218,9 @@ const ShapeRenderer = {
       }
     }
 
-    // Renderiza o Texto sem bordas
     if (text) {
       ctx.font = '14px monospace';
-      ctx.fillStyle = type === 'text' ? '#10b981' : '#64748b'; // Verde emerald para texto livre
+      ctx.fillStyle = type === 'text' ? '#10b981' : '#64748b';
       ctx.textBaseline = 'middle';
       
       const align = shape.textAlign || (type === 'text' ? 'left' : 'center');

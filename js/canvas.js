@@ -22,9 +22,13 @@ class CanvasManager {
     this.maxZoom = 3.0;
 
     this.isShiftPressed = false;
-    this.zoomMode = 'in'; // 'in' ou 'out' (Utilizado para controle touch)
+    this.zoomMode = 'in';
 
-    // Gestos Touch (Pinch Zoom)
+    // Otimização de Performance
+    this.renderRequested = false;
+    this.isInteracting = false;
+
+    // Gestos Touch
     this.initialPinchDistance = null;
     this.initialPinchZoom = 1.0;
 
@@ -110,7 +114,7 @@ class CanvasManager {
     this.zoom = newZoom;
 
     this.updateZoomDisplay();
-    this.render();
+    this.requestRender();
   }
 
   updateZoomDisplay() {
@@ -202,11 +206,10 @@ class CanvasManager {
         this.panY -= e.deltaY;
       }
 
-      this.render();
+      this.requestRender();
     }, { passive: false });
   }
 
-  // Mapeamento Avançado de Gestos Touch (Touch Single + Pinch Zoom Multi-touch)
   setupTouchEvents() {
     const getTouchPos = (touch) => {
       return { clientX: touch.clientX, clientY: touch.clientY, movementX: 0, movementY: 0 };
@@ -221,12 +224,12 @@ class CanvasManager {
     };
 
     this.canvas.addEventListener('touchstart', (e) => {
+      this.isInteracting = true;
       if (e.touches.length === 1) {
         this.initialPinchDistance = null;
         lastTouch = getTouchPos(e.touches[0]);
         this.onMouseDown(lastTouch);
       } else if (e.touches.length === 2) {
-        // Inicializa o Pinch-to-Zoom com 2 dedos
         this.isDrawing = false;
         this.initialPinchDistance = getDistance(e.touches[0], e.touches[1]);
         this.initialPinchZoom = this.zoom;
@@ -241,7 +244,6 @@ class CanvasManager {
         lastTouch = touch;
         this.onMouseMove(touch);
       } else if (e.touches.length === 2 && this.initialPinchDistance) {
-        // Aplica o Zoom dinâmico proporcional à distância dos dois dedos
         const currentDistance = getDistance(e.touches[0], e.touches[1]);
         const rect = this.canvas.getBoundingClientRect();
         
@@ -258,9 +260,11 @@ class CanvasManager {
 
     this.canvas.addEventListener('touchend', (e) => {
       if (e.touches.length === 0) {
+        this.isInteracting = false;
         this.onMouseUp();
         lastTouch = null;
         this.initialPinchDistance = null;
+        this.render(); // Re-renderiza com rugosidade completa ao soltar
       }
     });
   }
@@ -322,6 +326,7 @@ class CanvasManager {
     }
 
     this.isDrawing = true;
+    this.isInteracting = true;
     this.startX = x;
     this.startY = y;
 
@@ -339,7 +344,7 @@ class CanvasManager {
         Storage.save(this.elements);
         this.saveHistory();
       }
-      this.render();
+      this.requestRender();
       return;
     }
 
@@ -373,7 +378,7 @@ class CanvasManager {
         this.activeElement = null;
         this.activeHandle = null;
       }
-      this.render();
+      this.requestRender();
       return;
     }
 
@@ -420,7 +425,7 @@ class CanvasManager {
     if (this.currentTool === 'hand') {
       this.panX += e.movementX;
       this.panY += e.movementY;
-      this.render();
+      this.requestRender();
       return;
     }
 
@@ -444,12 +449,11 @@ class CanvasManager {
             });
           }
         }
-        this.render();
+        this.requestRender();
       } else {
         this.activeElement.width = x - this.startX;
         this.activeElement.height = y - this.startY;
-        this.render();
-        this.ShapeRendererDraw(this.activeElement);
+        this.requestRender();
       }
     }
   }
@@ -500,6 +504,7 @@ class CanvasManager {
   onMouseUp() {
     if (!this.isDrawing) return;
     this.isDrawing = false;
+    this.isInteracting = false;
 
     if (this.currentTool === 'pencil' && this.freehandPoints.length > 1) {
       const smoothed = this.smoothPoints(this.freehandPoints);
@@ -786,13 +791,27 @@ class CanvasManager {
     this.ctx.save();
     this.ctx.translate(this.panX, this.panY);
     this.ctx.scale(this.zoom, this.zoom);
-    ShapeRenderer.draw(this.rc, this.ctx, shape, this.elements);
+    ShapeRenderer.draw(this.rc, this.ctx, shape, this.elements, this.isInteracting);
     this.ctx.restore();
+  }
+
+  // Agendamento otimizado de Redesenho no ritmo da taxa de atualização do monitor/tela (60fps)
+  requestRender() {
+    if (!this.renderRequested) {
+      this.renderRequested = true;
+      requestAnimationFrame(() => {
+        this.renderRequested = false;
+        this.render();
+      });
+    }
   }
 
   render() {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.elements.forEach(shape => this.ShapeRendererDraw(shape));
+    if (this.activeElement && this.isDrawing) {
+      this.ShapeRendererDraw(this.activeElement);
+    }
   }
 
   clearCanvas() {
