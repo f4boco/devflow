@@ -1,7 +1,6 @@
 // Renderização das formas Hand-Drawn via Rough.js com Suporte a Zoom, Alinhamento, Símbolos Customizados e Performance Touch
 const ShapeRenderer = {
   draw(rc, ctx, shape, elements = [], isInteracting = false) {
-    // Se o usuário estiver interagindo/arrastando, reduz ligeiramente a rugosidade para manter 60 FPS
     const roughness = isInteracting ? 0.4 : 1.2;
 
     const options = {
@@ -13,7 +12,7 @@ const ShapeRenderer = {
       fillStyle: 'solid'
     };
 
-    let { x, y, width: w, height: h, type, text, points, customPoints, initialWidth, initialHeight } = shape;
+    let { x, y, width: w, height: h, type, text, points, customPoints, customStrokes, initialWidth, initialHeight } = shape;
 
     if (type === 'line' || type === 'arrow') {
       const lineWaypoints = this.getLineWaypoints(shape, elements);
@@ -45,9 +44,20 @@ const ShapeRenderer = {
         );
       }
     } else if (type === 'text') {
-      // Texto Livre PURAMENTE transparente — não desenha nenhuma borda ou caixa geométrica por trás
+      // Texto livre sem moldura
+    } else if (customStrokes && customStrokes.length > 0) {
+      // Renderiza TODOS os traços do símbolo customizado com escala proporcional
+      const scaleX = initialWidth ? w / initialWidth : 1;
+      const scaleY = initialHeight ? h / initialHeight : 1;
+
+      customStrokes.forEach(stroke => {
+        if (stroke && stroke.length > 1) {
+          const scaledPoints = stroke.map(p => [x + p.dx * scaleX, y + p.dy * scaleY]);
+          rc.curve(scaledPoints, options);
+        }
+      });
     } else if (customPoints && customPoints.length > 1) {
-      // Renderização de Símbolos Customizados criados pelo usuário
+      // Traço único (fallback)
       const scaleX = initialWidth ? w / initialWidth : 1;
       const scaleY = initialHeight ? h / initialHeight : 1;
       const scaledPoints = customPoints.map(p => [x + p.dx * scaleX, y + p.dy * scaleY]);
@@ -224,7 +234,6 @@ const ShapeRenderer = {
       }
     }
 
-    // Renderiza o Texto do Elemento
     if (text) {
       ctx.font = '14px monospace';
       ctx.fillStyle = type === 'text' ? '#10b981' : '#64748b';

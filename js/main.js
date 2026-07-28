@@ -99,7 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
       card.className = 'p-3 rounded-lg bg-slate-950 border border-slate-800 hover:border-emerald-500/60 hover:bg-slate-800/40 text-left transition flex items-center justify-between group';
       
       const canvasId = `preview-${s.id}`;
-      const isCustom = !!s.customPoints;
+      const isCustom = !!(s.customStrokes || s.customPoints);
 
       card.innerHTML = `
         <div class="flex items-center gap-3 min-w-0">
@@ -153,8 +153,18 @@ document.addEventListener('DOMContentLoaded', () => {
           if (isCustom) {
             const scaleX = 28 / s.initialWidth;
             const scaleY = 28 / s.initialHeight;
-            const scaledPoints = s.customPoints.map(p => [6 + p.dx * scaleX, 6 + p.dy * scaleY]);
-            pRc.curve(scaledPoints, { stroke: '#10b981', strokeWidth: 1.5, roughness: 1.2 });
+
+            if (s.customStrokes) {
+              s.customStrokes.forEach(stroke => {
+                if (stroke.length > 1) {
+                  const scaledPoints = stroke.map(p => [6 + p.dx * scaleX, 6 + p.dy * scaleY]);
+                  pRc.curve(scaledPoints, { stroke: '#10b981', strokeWidth: 1.5, roughness: 1.2 });
+                }
+              });
+            } else if (s.customPoints) {
+              const scaledPoints = s.customPoints.map(p => [6 + p.dx * scaleX, 6 + p.dy * scaleY]);
+              pRc.curve(scaledPoints, { stroke: '#10b981', strokeWidth: 1.5, roughness: 1.2 });
+            }
           } else {
             const previewShape = {
               type: s.id,
@@ -204,60 +214,156 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnCancelCustomSymbol = document.getElementById('btn-cancel-custom-symbol');
   const btnSaveCustomSymbol = document.getElementById('btn-save-custom-symbol');
   const btnClearDrawSymbol = document.getElementById('btn-clear-draw-symbol');
+  const btnUndoDrawSymbol = document.getElementById('btn-undo-draw-symbol');
+  
+  const toolPencil = document.getElementById('tool-draw-pencil');
+  const toolEraser = document.getElementById('tool-draw-eraser');
+
   const customCanvas = document.getElementById('custom-symbol-canvas');
   const newSymbolNameInput = document.getElementById('new-symbol-name');
 
   let customCtx = customCanvas ? customCanvas.getContext('2d') : null;
-  let customRc = customCanvas ? rough.canvas(customCanvas) : null;
   let isCustomDrawing = false;
-  let customDrawPoints = [];
+  let customTool = 'pencil';
+  
+  let strokePaths = [];
+  let currentStroke = [];
+
+  function setDrawTool(tool) {
+    customTool = tool;
+    if (tool === 'pencil') {
+      toolPencil.classList.add('text-emerald-400', 'bg-slate-800');
+      toolPencil.classList.remove('text-slate-400');
+      toolEraser.classList.remove('text-emerald-400', 'bg-slate-800');
+      toolEraser.classList.add('text-slate-400');
+      customCanvas.style.cursor = 'crosshair';
+    } else {
+      toolEraser.classList.add('text-emerald-400', 'bg-slate-800');
+      toolEraser.classList.remove('text-slate-400');
+      toolPencil.classList.remove('text-emerald-400', 'bg-slate-800');
+      toolPencil.classList.add('text-slate-400');
+      customCanvas.style.cursor = 'cell';
+    }
+  }
+
+  if (toolPencil) toolPencil.addEventListener('click', () => setDrawTool('pencil'));
+  if (toolEraser) toolEraser.addEventListener('click', () => setDrawTool('eraser'));
 
   function openCreateSymbolModal() {
     newSymbolNameInput.value = '';
-    customDrawPoints = [];
-    clearCustomCanvas();
+    strokePaths = [];
+    currentStroke = [];
+    setDrawTool('pencil');
+    redrawCustomCanvas();
     createSymbolModal.classList.remove('hidden');
   }
 
-  function clearCustomCanvas() {
+  function redrawCustomCanvas() {
     if (!customCtx) return;
     customCtx.clearRect(0, 0, customCanvas.width, customCanvas.height);
+
+    customCtx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+    customCtx.lineWidth = 1;
+    for (let x = 0; x < customCanvas.width; x += 20) {
+      customCtx.beginPath(); customCtx.moveTo(x, 0); customCtx.lineTo(x, customCanvas.height); customCtx.stroke();
+    }
+    for (let y = 0; y < customCanvas.height; y += 20) {
+      customCtx.beginPath(); customCtx.moveTo(0, y); customCtx.lineTo(customCanvas.width, y); customCtx.stroke();
+    }
+
+    customCtx.strokeStyle = '#10b981';
+    customCtx.lineWidth = 2.5;
+    customCtx.lineCap = 'round';
+    customCtx.lineJoin = 'round';
+
+    strokePaths.forEach(path => {
+      if (path.length < 2) return;
+      customCtx.beginPath();
+      customCtx.moveTo(path[0].x, path[0].y);
+      for (let i = 1; i < path.length; i++) {
+        customCtx.lineTo(path[i].x, path[i].y);
+      }
+      customCtx.stroke();
+    });
+
+    if (currentStroke.length >= 2) {
+      customCtx.beginPath();
+      customCtx.moveTo(currentStroke[0].x, currentStroke[0].y);
+      for (let i = 1; i < currentStroke.length; i++) {
+        customCtx.lineTo(currentStroke[i].x, currentStroke[i].y);
+      }
+      customCtx.stroke();
+    }
   }
 
-  function drawCustomStroke() {
-    clearCustomCanvas();
-    if (customDrawPoints.length < 2) return;
-    customCtx.beginPath();
-    customCtx.strokeStyle = '#10b981';
-    customCtx.lineWidth = 2;
-    customCtx.moveTo(customDrawPoints[0].x, customDrawPoints[0].y);
-    for (let i = 1; i < customDrawPoints.length; i++) {
-      customCtx.lineTo(customDrawPoints[i].x, customDrawPoints[i].y);
-    }
-    customCtx.stroke();
+  function eraseAtPoint(x, y) {
+    const radius = 12;
+    strokePaths = strokePaths.map(path => {
+      return path.filter(p => Math.hypot(p.x - x, p.y - y) > radius);
+    }).filter(path => path.length > 1);
+
+    redrawCustomCanvas();
+  }
+
+  function getCanvasCoords(e) {
+    const rect = customCanvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return {
+      x: clientX - rect.left,
+      y: clientY - rect.top
+    };
   }
 
   if (customCanvas) {
-    customCanvas.addEventListener('mousedown', (e) => {
+    const startDraw = (e) => {
       isCustomDrawing = true;
-      const rect = customCanvas.getBoundingClientRect();
-      customDrawPoints.push({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-    });
+      const { x, y } = getCanvasCoords(e);
+      if (customTool === 'pencil') {
+        currentStroke = [{ x, y }];
+      } else {
+        eraseAtPoint(x, y);
+      }
+    };
 
-    customCanvas.addEventListener('mousemove', (e) => {
+    const moveDraw = (e) => {
       if (!isCustomDrawing) return;
-      const rect = customCanvas.getBoundingClientRect();
-      customDrawPoints.push({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-      drawCustomStroke();
-    });
+      const { x, y } = getCanvasCoords(e);
+      if (customTool === 'pencil') {
+        currentStroke.push({ x, y });
+        redrawCustomCanvas();
+      } else {
+        eraseAtPoint(x, y);
+      }
+    };
 
-    window.addEventListener('mouseup', () => {
+    const endDraw = () => {
+      if (!isCustomDrawing) return;
       isCustomDrawing = false;
-    });
+      if (customTool === 'pencil' && currentStroke.length > 1) {
+        strokePaths.push([...currentStroke]);
+      }
+      currentStroke = [];
+      redrawCustomCanvas();
+    };
+
+    customCanvas.addEventListener('mousedown', startDraw);
+    customCanvas.addEventListener('mousemove', moveDraw);
+    window.addEventListener('mouseup', endDraw);
+
+    customCanvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDraw(e); }, { passive: false });
+    customCanvas.addEventListener('touchmove', (e) => { e.preventDefault(); moveDraw(e); }, { passive: false });
+    customCanvas.addEventListener('touchend', endDraw);
 
     btnClearDrawSymbol.addEventListener('click', () => {
-      customDrawPoints = [];
-      clearCustomCanvas();
+      strokePaths = [];
+      currentStroke = [];
+      redrawCustomCanvas();
+    });
+
+    btnUndoDrawSymbol.addEventListener('click', () => {
+      strokePaths.pop();
+      redrawCustomCanvas();
     });
   }
 
@@ -271,13 +377,15 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    if (customDrawPoints.length < 3) {
+    if (strokePaths.length === 0) {
       alert('Por favor, desenhe uma forma no quadro antes de salvar.');
       return;
     }
 
-    const xs = customDrawPoints.map(p => p.x);
-    const ys = customDrawPoints.map(p => p.y);
+    const allPoints = strokePaths.flat();
+    const xs = allPoints.map(p => p.x);
+    const ys = allPoints.map(p => p.y);
+
     const minX = Math.min(...xs);
     const maxX = Math.max(...xs);
     const minY = Math.min(...ys);
@@ -286,17 +394,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const initialWidth = Math.max(maxX - minX, 20);
     const initialHeight = Math.max(maxY - minY, 20);
 
-    const relativePoints = customDrawPoints.map(p => ({
-      dx: p.x - minX,
-      dy: p.y - minY
-    }));
+    const relativeStrokes = strokePaths.map(path => {
+      return path.map(p => ({
+        dx: p.x - minX,
+        dy: p.y - minY
+      }));
+    });
 
     const newCustomSymbol = {
       id: `custom_${Date.now()}`,
       name: name,
       initialWidth: initialWidth,
       initialHeight: initialHeight,
-      customPoints: relativePoints
+      customStrokes: relativeStrokes,
+      customPoints: relativeStrokes[0]
     };
 
     Storage.saveCustomSymbol(newCustomSymbol);

@@ -9,7 +9,7 @@ class CanvasManager {
     this.elements = Storage.loadTabData(activeTabId);
 
     this.currentTool = 'select';
-    this.customSymbolShape = null; // Guarda o símbolo customizado selecionado da biblioteca
+    this.customSymbolShape = null; // Guarda o símbolo customizado selecionado
     this.isDrawing = false;
     this.startX = 0;
     this.startY = 0;
@@ -406,6 +406,7 @@ class CanvasManager {
       height: customSymbol ? customSymbol.initialHeight : 10,
       initialWidth: customSymbol ? customSymbol.initialWidth : null,
       initialHeight: customSymbol ? customSymbol.initialHeight : null,
+      customStrokes: customSymbol ? customSymbol.customStrokes : null, // Passa a lista COMPLETA de traços do símbolo
       customPoints: customSymbol ? customSymbol.customPoints : null,
       text: '',
       textAlign: this.currentTool === 'text' ? 'left' : 'center',
