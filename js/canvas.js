@@ -5,7 +5,10 @@ class CanvasManager {
     this.ctx = this.canvas.getContext('2d');
     this.rc = rough.canvas(this.canvas);
 
-    this.elements = Storage.load();
+    // Carrega os elementos da aba ativa no LocalStorage
+    const activeTabId = Storage.getActiveTabId();
+    this.elements = Storage.loadTabData(activeTabId);
+
     this.currentTool = 'select';
     this.isDrawing = false;
     this.startX = 0;
@@ -39,7 +42,7 @@ class CanvasManager {
 
     this.init();
   }
-
+  
   init() {
     this.resize();
     window.addEventListener('resize', () => this.resize());

@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
   lucide.createIcons();
 
   const canvasMgr = new CanvasManager('flowchart-canvas', 'workspace');
+  const tabsMgr = new TabsManager(canvasMgr);
 
   const flowchartSymbols = [
     { id: 'start-end', name: 'Terminador (Início/Fim)' },
@@ -37,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
     { id: 'comment', name: 'Comentário / Anotação' }
   ];
 
-  // Alternar Ferramentas com Suporte Touch (Clique na ferramenta de zoom ativa alterna entre + / -)
+  // Alternar Ferramentas
   const toolButtons = document.querySelectorAll('.tool-btn');
   toolButtons.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -61,7 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Resetar Zoom ou Alternar Modo + / - ao clicar na porcentagem
+  // Resetar Zoom
   const zoomText = document.getElementById('zoom-level-text');
   if (zoomText) {
     zoomText.addEventListener('click', () => {
@@ -248,7 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Importar Projeto
+  // Importar Projeto Abrindo em Nova Aba
   const btnOpenFile = document.getElementById('btn-open-file');
   const inputImportFile = document.getElementById('input-import-file');
 
@@ -265,11 +266,9 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         const importedElements = JSON.parse(event.target.result);
         if (Array.isArray(importedElements)) {
-          canvasMgr.elements = importedElements;
-          Storage.save(canvasMgr.elements);
-          canvasMgr.saveHistory();
-          canvasMgr.render();
-          alert('Projeto DevFlow importado com sucesso!');
+          const fileName = file.name.replace(/\.(devflow|json)$/i, '');
+          tabsMgr.createNewTab(fileName, importedElements);
+          alert('Projeto DevFlow importado em uma nova aba!');
         } else {
           alert('O arquivo selecionado não contém uma estrutura válida do DevFlow.');
         }
@@ -302,9 +301,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Botão Novo
+  // Limpar Aba Atual
   document.getElementById('btn-new').addEventListener('click', () => {
-    if (confirm('Tem certeza de que deseja apagar o fluxograma atual e começar um novo?')) {
+    if (confirm('Tem certeza de que deseja apagar os elementos desta aba?')) {
       canvasMgr.clearCanvas();
     }
   });
@@ -329,9 +328,12 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.getElementById('btn-download-editable').addEventListener('click', async () => {
+    const activeTab = tabsMgr.tabs.find(t => t.id === tabsMgr.activeTabId);
+    const fileName = activeTab ? activeTab.name.toLowerCase().replace(/\s+/g, '-') : 'diagrama';
+    
     const jsonString = JSON.stringify(canvasMgr.elements, null, 2);
     const blob = new Blob([jsonString], { type: 'application/json' });
-    await saveWithSystemDialog(blob, 'meu-diagrama.devflow', [
+    await saveWithSystemDialog(blob, `${fileName}.devflow`, [
       {
         description: 'DevFlow Project File',
         accept: { 'application/json': ['.devflow', '.json'] }

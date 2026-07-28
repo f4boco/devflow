@@ -6,7 +6,7 @@
   <title>DevFlow - Algorithmic Flowcharts</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Rough.js (Estilo Hand-drawn) -->
+  <!-- Rough.js -->
   <script src="https://unpkg.com/roughjs@latest/bundled/rough.js"></script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -16,40 +16,51 @@
 </head>
 <body class="bg-slate-900 text-slate-100 h-screen w-screen overflow-hidden flex flex-col font-mono select-none">
 
-  <!-- Top Header Base (Apenas Logo + Ações Globais do Sistema) -->
-  <header class="h-14 border-b border-slate-800 bg-slate-950/90 backdrop-blur px-3 sm:px-4 flex items-center justify-between z-10 shrink-0">
+  <!-- Top Header Base (Ajustado para h-14 com mais respiro) -->
+  <header class="h-14 border-b border-slate-800 bg-slate-950 px-4 flex items-center justify-between z-10 shrink-0">
     <!-- Brand / Logo -->
-    <div class="flex items-center gap-2 shrink-0">
-      <div class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
-      <span class="font-bold text-base sm:text-lg tracking-wider text-emerald-400 font-mono">&lt;DevFlow/&gt;</span>
+    <div class="flex items-center gap-2.5 shrink-0">
+      <div class="w-3.5 h-3.5 rounded-full bg-emerald-500 animate-pulse"></div>
+      <span class="font-bold text-lg sm:text-xl tracking-wider text-emerald-400 font-mono">&lt;DevFlow/&gt;</span>
     </div>
 
-    <!-- Right Actions / System Menu -->
-    <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
-      <button id="btn-open-file" class="p-2 sm:px-3 sm:py-1.5 rounded bg-sky-500/10 border border-sky-500/30 text-sky-400 hover:bg-sky-500/20 text-xs sm:text-sm flex items-center gap-1 transition" title="Abrir arquivo .devflow">
+    <!-- System Actions -->
+    <div class="flex items-center gap-2 shrink-0">
+      <button id="btn-open-file" class="px-3 py-1.5 rounded bg-sky-500/10 border border-sky-500/30 text-sky-400 hover:bg-sky-500/20 text-xs sm:text-sm flex items-center gap-1.5 transition font-medium" title="Abrir arquivo .devflow">
         <i data-lucide="folder-open" class="w-4 h-4"></i>
         <span class="hidden sm:inline">Abrir</span>
       </button>
       <input type="file" id="input-import-file" accept=".devflow,.json" class="hidden">
 
-      <button id="btn-new" class="p-2 sm:px-3 sm:py-1.5 rounded bg-rose-500/10 border border-rose-500/30 text-rose-400 hover:bg-rose-500/20 text-xs sm:text-sm flex items-center gap-1 transition" title="Novo Fluxograma">
+      <button id="btn-new" class="px-3 py-1.5 rounded bg-rose-500/10 border border-rose-500/30 text-rose-400 hover:bg-rose-500/20 text-xs sm:text-sm flex items-center gap-1.5 transition font-medium" title="Limpar Fluxograma Atual">
         <i data-lucide="file-plus" class="w-4 h-4"></i>
-        <span class="hidden sm:inline">Novo</span>
+        <span class="hidden sm:inline">Limpar</span>
       </button>
 
-      <button id="btn-export" class="p-2 sm:px-3 sm:py-1.5 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 text-xs sm:text-sm flex items-center gap-1 transition" title="Exportar Fluxograma">
+      <button id="btn-export" class="px-3 py-1.5 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 text-xs sm:text-sm flex items-center gap-1.5 transition font-medium" title="Exportar Fluxograma">
         <i data-lucide="download" class="w-4 h-4"></i>
         <span class="hidden sm:inline">Exportar</span>
       </button>
     </div>
   </header>
 
-  <!-- Universal Bottom Floating Toolbar (Fixa na parte inferior em todas as telas) -->
+  <!-- Sub-Barra de Abas Dedicada (Ajustada para h-10) -->
+  <div class="h-10 border-b border-slate-800/80 bg-slate-950/70 backdrop-blur px-3 flex items-center gap-2 z-10 shrink-0 overflow-x-auto scrollbar-none">
+    <div class="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-1" id="tabs-container">
+      <!-- Abas Renderizadas Dinamicamente via TabsManager -->
+    </div>
+
+    <button id="btn-add-tab" class="p-1.5 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition shrink-0 border border-slate-800/80 flex items-center justify-center ml-1" title="Nova Aba de Fluxograma">
+      <i data-lucide="plus" class="w-4 h-4"></i>
+    </button>
+  </div>
+
+  <!-- Universal Bottom Floating Toolbar -->
   <div class="fixed bottom-4 left-1/2 -translate-x-1/2 z-30 max-w-[96vw] bg-slate-900/90 backdrop-blur-md border border-slate-800 rounded-xl p-1.5 shadow-2xl flex items-center gap-1 overflow-x-auto scrollbar-none">
     <button data-tool="hand" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition shrink-0 min-w-[38px] min-h-[38px] flex items-center justify-center" title="Mão / Pan (H)">
       <i data-lucide="hand" class="w-5 h-5"></i>
     </button>
-    <button data-tool="zoom" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition shrink-0 min-w-[38px] min-h-[38px] flex items-center justify-center" title="Zoom In (Clique) / Zoom Out (Shift+Clique) (Z)">
+    <button data-tool="zoom" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition shrink-0 min-w-[38px] min-h-[38px] flex items-center justify-center" title="Zoom In / Out (Z)">
       <i data-lucide="zoom-in" class="zoom-icon-target w-5 h-5"></i>
     </button>
     <button data-tool="select" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition active-tool shrink-0 min-w-[38px] min-h-[38px] flex items-center justify-center" title="Selecionar (S)">
@@ -58,29 +69,26 @@
 
     <div class="w-px h-6 bg-slate-800 mx-1 shrink-0"></div>
 
-    <!-- Símbolos RÁPIDOS -->
-    <button data-tool="start-end" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition shrink-0 min-w-[38px] min-h-[38px] flex items-center justify-center" title="Início / Fim (Pílula)">
+    <button data-tool="start-end" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition shrink-0 min-w-[38px] min-h-[38px] flex items-center justify-center" title="Início / Fim">
       <svg class="w-5 h-5 stroke-current fill-none stroke-[2]" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="10" rx="5" ry="5" /></svg>
     </button>
-    <button data-tool="process" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition shrink-0 min-w-[38px] min-h-[38px] flex items-center justify-center" title="Processo (Retângulo)">
+    <button data-tool="process" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition shrink-0 min-w-[38px] min-h-[38px] flex items-center justify-center" title="Processo">
       <svg class="w-5 h-5 stroke-current fill-none stroke-[2]" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="1" /></svg>
     </button>
-    <button data-tool="input-output" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition shrink-0 min-w-[38px] min-h-[38px] flex items-center justify-center" title="Entrada / Saída (Paralelogramo)">
+    <button data-tool="input-output" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition shrink-0 min-w-[38px] min-h-[38px] flex items-center justify-center" title="Entrada / Saída">
       <svg class="w-5 h-5 stroke-current fill-none stroke-[2]" viewBox="0 0 24 24"><polygon points="6,6 21,6 18,18 3,18" /></svg>
     </button>
-    <button data-tool="condition" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition shrink-0 min-w-[38px] min-h-[38px] flex items-center justify-center" title="Condição / Decisão (Losango)">
+    <button data-tool="condition" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition shrink-0 min-w-[38px] min-h-[38px] flex items-center justify-center" title="Condição / Decisão">
       <svg class="w-5 h-5 stroke-current fill-none stroke-[2]" viewBox="0 0 24 24"><polygon points="12,3 21,12 12,21 3,12" /></svg>
     </button>
 
-    <!-- Botão Biblioteca Completa -->
-    <button id="btn-symbol-library" class="p-2 rounded hover:bg-slate-800 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 text-xs font-semibold transition shrink-0 min-w-[38px] min-h-[38px]" title="Biblioteca de Símbolos Completa">
+    <button id="btn-symbol-library" class="p-2 rounded hover:bg-slate-800 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 text-xs font-semibold transition shrink-0 min-w-[38px] min-h-[38px]" title="Biblioteca de Símbolos">
       <i data-lucide="shapes" class="w-5 h-5"></i>
       <span class="hidden sm:inline">Símbolos</span>
     </button>
 
     <div class="w-px h-6 bg-slate-800 mx-1 shrink-0"></div>
 
-    <!-- Linha e Seta -->
     <button data-tool="line" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition shrink-0 min-w-[38px] min-h-[38px] flex items-center justify-center" title="Linha">
       <i data-lucide="minus" class="w-5 h-5"></i>
     </button>
@@ -90,11 +98,10 @@
 
     <div class="w-px h-6 bg-slate-800 mx-1 shrink-0"></div>
 
-    <!-- Caneta, Auto-Draw, Texto e Borracha -->
-    <button data-tool="pencil" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition shrink-0 min-w-[38px] min-h-[38px] flex items-center justify-center" title="Caneta Livre (Pencil)">
+    <button data-tool="pencil" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition shrink-0 min-w-[38px] min-h-[38px] flex items-center justify-center" title="Caneta Livre">
       <i data-lucide="pencil" class="w-5 h-5"></i>
     </button>
-    <button data-tool="auto-draw" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition shrink-0 min-w-[38px] min-h-[38px] flex items-center justify-center" title="Auto-Ajuste (Smart Draw)">
+    <button data-tool="auto-draw" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition shrink-0 min-w-[38px] min-h-[38px] flex items-center justify-center" title="Auto-Ajuste">
       <i data-lucide="wand-2" class="w-5 h-5"></i>
     </button>
     <button data-tool="text" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition shrink-0 min-w-[38px] min-h-[38px] flex items-center justify-center" title="Texto Livre">
@@ -109,30 +116,29 @@
   <main class="flex-1 relative bg-slate-950 overflow-hidden cursor-crosshair touch-none" id="workspace">
     <canvas id="flowchart-canvas"></canvas>
 
-    <!-- Indicador de Zoom no Canto Inferior Direito da Lousa -->
+    <!-- Indicador de Zoom -->
     <div class="absolute bottom-4 right-4 z-20">
       <span id="zoom-level-text" class="text-xs font-mono text-slate-300 bg-slate-900/90 backdrop-blur-md border border-slate-800 px-3 py-1.5 rounded-lg shadow-lg select-none cursor-pointer hover:text-emerald-400 hover:border-emerald-500/40 transition block" title="Clique para resetar em 100%">100%</span>
     </div>
 
-    <!-- Overlay de Edição de Texto com Barra Flutuante de Alinhamento -->
+    <!-- Text Editor -->
     <div id="text-editor-container" class="hidden absolute z-20 flex flex-col gap-1 items-start">
       <div id="text-align-toolbar" class="flex items-center bg-slate-900 border border-slate-700 rounded p-0.5 shadow-xl text-slate-400">
-        <button type="button" data-align="left" class="align-btn p-1 rounded hover:bg-slate-800 hover:text-emerald-400 transition" title="Alinhar à Esquerda">
+        <button type="button" data-align="left" class="align-btn p-1 rounded hover:bg-slate-800 hover:text-emerald-400 transition">
           <i data-lucide="align-left" class="w-3.5 h-3.5"></i>
         </button>
-        <button type="button" data-align="center" class="align-btn p-1 rounded hover:bg-slate-800 hover:text-emerald-400 transition text-emerald-400 bg-slate-800" title="Centralizado">
+        <button type="button" data-align="center" class="align-btn p-1 rounded hover:bg-slate-800 hover:text-emerald-400 transition text-emerald-400 bg-slate-800">
           <i data-lucide="align-center" class="w-3.5 h-3.5"></i>
         </button>
-        <button type="button" data-align="right" class="align-btn p-1 rounded hover:bg-slate-800 hover:text-emerald-400 transition" title="Alinhar à Direita">
+        <button type="button" data-align="right" class="align-btn p-1 rounded hover:bg-slate-800 hover:text-emerald-400 transition">
           <i data-lucide="align-right" class="w-3.5 h-3.5"></i>
         </button>
       </div>
-
       <textarea id="text-editor" class="bg-slate-800 text-emerald-400 border border-emerald-500 rounded p-1 font-mono text-sm outline-none resize-none shadow-2xl w-full h-full"></textarea>
     </div>
   </main>
 
-  <!-- Modal Biblioteca de Símbolos -->
+  <!-- Modais -->
   <div id="symbols-modal" class="hidden fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-xl max-w-4xl w-full p-4 sm:p-6 shadow-2xl flex flex-col gap-4 max-h-[85vh]">
       <div class="flex justify-between items-center border-b border-slate-800 pb-3">
@@ -144,19 +150,14 @@
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
-
       <div class="relative">
         <i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-slate-500"></i>
         <input type="text" id="search-symbol" placeholder="Buscar símbolo..." class="w-full bg-slate-950 border border-slate-800 rounded p-2 pl-9 text-sm text-slate-200 outline-none focus:border-emerald-500 transition">
       </div>
-
-      <div id="symbols-grid" class="flex-1 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 p-1">
-        <!-- Renderizado dinamicamente via JS com Mini-Canvas Preview -->
-      </div>
+      <div id="symbols-grid" class="flex-1 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 p-1"></div>
     </div>
   </div>
 
-  <!-- Export Modal -->
   <div id="export-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-xl max-w-3xl w-full p-4 sm:p-6 shadow-2xl flex flex-col gap-4 max-h-[90vh]">
       <div class="flex justify-between items-center border-b border-slate-800 pb-3">
@@ -167,11 +168,7 @@
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
-
-      <div class="flex-1 overflow-auto bg-slate-950 p-3 sm:p-4 rounded border border-slate-800 font-mono text-xs text-emerald-400 whitespace-pre" id="ascii-preview">
-        <!-- Generated ASCII output goes here -->
-      </div>
-
+      <div class="flex-1 overflow-auto bg-slate-950 p-3 sm:p-4 rounded border border-slate-800 font-mono text-xs text-emerald-400 whitespace-pre" id="ascii-preview"></div>
       <div class="flex flex-wrap gap-2 justify-end pt-2 border-t border-slate-800">
         <button id="btn-copy-ascii" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded flex items-center gap-1.5 text-xs sm:text-sm transition">
           <i data-lucide="copy" class="w-4 h-4"></i> Copiar ASCII
@@ -194,6 +191,7 @@
   <script src="js/recognizer.js"></script>
   <script src="js/ascii.js"></script>
   <script src="js/canvas.js"></script>
+  <script src="js/tabs.js"></script>
   <script src="js/main.js"></script>
 </body>
 </html>
