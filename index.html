@@ -16,15 +16,13 @@
 </head>
 <body class="bg-slate-900 text-slate-100 h-screen w-screen overflow-hidden flex flex-col font-mono select-none">
 
-  <!-- Top Header Base (Ajustado para h-14 com mais respiro) -->
+  <!-- Top Header Base -->
   <header class="h-14 border-b border-slate-800 bg-slate-950 px-4 flex items-center justify-between z-10 shrink-0">
-    <!-- Brand / Logo -->
     <div class="flex items-center gap-2.5 shrink-0">
       <div class="w-3.5 h-3.5 rounded-full bg-emerald-500 animate-pulse"></div>
       <span class="font-bold text-lg sm:text-xl tracking-wider text-emerald-400 font-mono">&lt;DevFlow/&gt;</span>
     </div>
 
-    <!-- System Actions -->
     <div class="flex items-center gap-2 shrink-0">
       <button id="btn-open-file" class="px-3 py-1.5 rounded bg-sky-500/10 border border-sky-500/30 text-sky-400 hover:bg-sky-500/20 text-xs sm:text-sm flex items-center gap-1.5 transition font-medium" title="Abrir arquivo .devflow">
         <i data-lucide="folder-open" class="w-4 h-4"></i>
@@ -44,12 +42,9 @@
     </div>
   </header>
 
-  <!-- Sub-Barra de Abas Dedicada (Ajustada para h-10) -->
+  <!-- Sub-Barra de Abas -->
   <div class="h-10 border-b border-slate-800/80 bg-slate-950/70 backdrop-blur px-3 flex items-center gap-2 z-10 shrink-0 overflow-x-auto scrollbar-none">
-    <div class="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-1" id="tabs-container">
-      <!-- Abas Renderizadas Dinamicamente via TabsManager -->
-    </div>
-
+    <div class="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-1" id="tabs-container"></div>
     <button id="btn-add-tab" class="p-1.5 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition shrink-0 border border-slate-800/80 flex items-center justify-center ml-1" title="Nova Aba de Fluxograma">
       <i data-lucide="plus" class="w-4 h-4"></i>
     </button>
@@ -138,7 +133,7 @@
     </div>
   </main>
 
-  <!-- Modais -->
+  <!-- Modal Biblioteca de Símbolos -->
   <div id="symbols-modal" class="hidden fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-xl max-w-4xl w-full p-4 sm:p-6 shadow-2xl flex flex-col gap-4 max-h-[85vh]">
       <div class="flex justify-between items-center border-b border-slate-800 pb-3">
@@ -158,6 +153,45 @@
     </div>
   </div>
 
+  <!-- Modal Desenhar Novo Símbolo Customizado -->
+  <div id="create-symbol-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl max-w-md w-full p-5 shadow-2xl flex flex-col gap-4">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-2.5">
+        <h3 class="text-base font-bold text-emerald-400 flex items-center gap-2">
+          <i data-lucide="pen-tool" class="w-5 h-5"></i> Criar Novo Símbolo
+        </h3>
+        <button id="close-create-symbol-modal" class="text-slate-400 hover:text-slate-100 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="flex flex-col gap-1.5">
+        <label class="text-xs font-semibold text-slate-300">Nome do Símbolo:</label>
+        <input type="text" id="new-symbol-name" placeholder="Ex: Servidor Kafka, Microserviço..." class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-sm text-slate-200 outline-none focus:border-emerald-500 transition">
+      </div>
+
+      <div class="flex flex-col gap-1.5">
+        <div class="flex justify-between items-center">
+          <label class="text-xs font-semibold text-slate-300">Desenhe a forma no quadro abaixo:</label>
+          <button id="btn-clear-draw-symbol" class="text-[11px] text-rose-400 hover:underline flex items-center gap-1">
+            <i data-lucide="eraser" class="w-3 h-3"></i> Limpar Traço
+          </button>
+        </div>
+        <div class="w-full h-52 bg-slate-950 border border-slate-800 rounded-lg overflow-hidden flex items-center justify-center relative cursor-crosshair">
+          <canvas id="custom-symbol-canvas" width="360" height="200"></canvas>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2 border-t border-slate-800">
+        <button id="btn-cancel-custom-symbol" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs transition">Cancelar</button>
+        <button id="btn-save-custom-symbol" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded text-xs transition flex items-center gap-1.5">
+          <i data-lucide="save" class="w-3.5 h-3.5"></i> Salvar Símbolo
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Exportar -->
   <div id="export-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-xl max-w-3xl w-full p-4 sm:p-6 shadow-2xl flex flex-col gap-4 max-h-[90vh]">
       <div class="flex justify-between items-center border-b border-slate-800 pb-3">

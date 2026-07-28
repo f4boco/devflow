@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const canvasMgr = new CanvasManager('flowchart-canvas', 'workspace');
   const tabsMgr = new TabsManager(canvasMgr);
 
-  const flowchartSymbols = [
+  const baseFlowchartSymbols = [
     { id: 'start-end', name: 'Terminador (Início/Fim)' },
     { id: 'process', name: 'Processo' },
     { id: 'predefined-process', name: 'Processo Predefinido' },
@@ -62,23 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Resetar Zoom
-  const zoomText = document.getElementById('zoom-level-text');
-  if (zoomText) {
-    zoomText.addEventListener('click', () => {
-      if (canvasMgr.currentTool === 'zoom') {
-        canvasMgr.toggleZoomMode();
-      } else {
-        canvasMgr.zoom = 1.0;
-        canvasMgr.panX = 0;
-        canvasMgr.panY = 0;
-        canvasMgr.updateZoomDisplay();
-        canvasMgr.render();
-      }
-    });
-  }
-
-  // Modal Biblioteca de Símbolos com Preview
+  // Modal Biblioteca de Símbolos com Suporte a Símbolos Customizados
   const symbolsModal = document.getElementById('symbols-modal');
   const btnSymbolLibrary = document.getElementById('btn-symbol-library');
   const closeSymbolsModal = document.getElementById('close-symbols-modal');
@@ -87,34 +71,76 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderSymbolsGrid(filterText = '') {
     symbolsGrid.innerHTML = '';
-    const filtered = flowchartSymbols.filter(s => s.name.toLowerCase().includes(filterText.toLowerCase()));
 
-    if (filtered.length === 0) {
-      symbolsGrid.innerHTML = `<div class="col-span-full text-center py-6 text-slate-500 text-sm">Nenhum símbolo encontrado.</div>`;
-      return;
-    }
+    const customSymbols = Storage.getCustomSymbols();
+    const allSymbols = [...baseFlowchartSymbols, ...customSymbols];
+    const filtered = allSymbols.filter(s => s.name.toLowerCase().includes(filterText.toLowerCase()));
+
+    // Card em Destaque para "Criar Novo Símbolo"
+    const createCard = document.createElement('button');
+    createCard.className = 'p-3 rounded-lg border-2 border-dashed border-emerald-500/50 hover:border-emerald-400 bg-emerald-500/5 hover:bg-emerald-500/10 text-left transition flex items-center gap-3 group shrink-0';
+    createCard.innerHTML = `
+      <div class="w-12 h-12 rounded bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center shrink-0 text-emerald-400 group-hover:scale-105 transition">
+        <i data-lucide="plus" class="w-6 h-6"></i>
+      </div>
+      <div class="flex flex-col">
+        <span class="text-xs font-bold text-emerald-400">Criar Novo Símbolo</span>
+        <span class="text-[10px] text-slate-400">Desenhe e salve seu símbolo</span>
+      </div>
+    `;
+    createCard.addEventListener('click', () => {
+      symbolsModal.classList.add('hidden');
+      openCreateSymbolModal();
+    });
+    symbolsGrid.appendChild(createCard);
 
     filtered.forEach(s => {
       const card = document.createElement('button');
-      card.className = 'p-3 rounded-lg bg-slate-950 border border-slate-800 hover:border-emerald-500/60 hover:bg-slate-800/40 text-left transition flex items-center gap-3 group';
+      card.className = 'p-3 rounded-lg bg-slate-950 border border-slate-800 hover:border-emerald-500/60 hover:bg-slate-800/40 text-left transition flex items-center justify-between group';
       
       const canvasId = `preview-${s.id}`;
-      
+      const isCustom = !!s.customPoints;
+
       card.innerHTML = `
-        <div class="w-12 h-12 rounded bg-slate-900 border border-slate-800 flex items-center justify-center shrink-0 group-hover:border-emerald-500/40 transition">
-          <canvas id="${canvasId}" width="40" height="40"></canvas>
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-12 h-12 rounded bg-slate-900 border border-slate-800 flex items-center justify-center shrink-0 group-hover:border-emerald-500/40 transition">
+            <canvas id="${canvasId}" width="40" height="40"></canvas>
+          </div>
+          <div class="flex flex-col min-w-0">
+            <div class="flex items-center gap-1.5">
+              <span class="text-xs font-semibold text-slate-200 group-hover:text-emerald-400 transition truncate">${s.name}</span>
+              ${isCustom ? '<span class="text-[9px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-1 rounded font-mono">Custom</span>' : ''}
+            </div>
+            <span class="text-[10px] text-slate-500 font-mono">type: "${s.id}"</span>
+          </div>
         </div>
-        <div class="flex flex-col min-w-0">
-          <span class="text-xs font-semibold text-slate-200 group-hover:text-emerald-400 transition truncate">${s.name}</span>
-          <span class="text-[10px] text-slate-500 font-mono">type: "${s.id}"</span>
-        </div>
+        ${isCustom ? `
+          <button class="btn-delete-custom-symbol text-slate-600 hover:text-rose-400 p-1 transition" title="Excluir Símbolo Customizado">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+          </button>
+        ` : ''}
       `;
 
-      card.addEventListener('click', () => {
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('.btn-delete-custom-symbol')) return;
+
         canvasMgr.currentTool = s.id;
+        canvasMgr.customSymbolShape = isCustom ? s : null;
+
         toolButtons.forEach(b => b.classList.remove('active-tool'));
         symbolsModal.classList.add('hidden');
       });
+
+      const btnDelete = card.querySelector('.btn-delete-custom-symbol');
+      if (btnDelete) {
+        btnDelete.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (confirm(`Deseja excluir o símbolo customizado "${s.name}"?`)) {
+            Storage.deleteCustomSymbol(s.id);
+            renderSymbolsGrid(searchInput.value);
+          }
+        });
+      }
 
       symbolsGrid.appendChild(card);
 
@@ -124,28 +150,37 @@ document.addEventListener('DOMContentLoaded', () => {
           const pCtx = pCanvas.getContext('2d');
           const pRc = rough.canvas(pCanvas);
 
-          const previewShape = {
-            type: s.id,
-            x: 6,
-            y: 6,
-            width: 28,
-            height: 28,
-            selected: false,
-            waypoints: [{ x: 34, y: 34 }]
-          };
+          if (isCustom) {
+            const scaleX = 28 / s.initialWidth;
+            const scaleY = 28 / s.initialHeight;
+            const scaledPoints = s.customPoints.map(p => [6 + p.dx * scaleX, 6 + p.dy * scaleY]);
+            pRc.curve(scaledPoints, { stroke: '#10b981', strokeWidth: 1.5, roughness: 1.2 });
+          } else {
+            const previewShape = {
+              type: s.id,
+              x: 6,
+              y: 6,
+              width: 28,
+              height: 28,
+              selected: false,
+              waypoints: [{ x: 34, y: 34 }]
+            };
 
-          if (['line', 'arrow'].includes(s.id)) {
-            previewShape.x = 6;
-            previewShape.y = 20;
-            previewShape.width = 28;
-            previewShape.height = 0;
-            previewShape.waypoints = [{ x: 34, y: 20 }];
+            if (['line', 'arrow'].includes(s.id)) {
+              previewShape.x = 6;
+              previewShape.y = 20;
+              previewShape.width = 28;
+              previewShape.height = 0;
+              previewShape.waypoints = [{ x: 34, y: 20 }];
+            }
+
+            ShapeRenderer.draw(pRc, pCtx, previewShape, []);
           }
-
-          ShapeRenderer.draw(pRc, pCtx, previewShape, []);
         }
       }, 0);
     });
+
+    lucide.createIcons();
   }
 
   if (btnSymbolLibrary) {
@@ -163,7 +198,115 @@ document.addEventListener('DOMContentLoaded', () => {
     renderSymbolsGrid(e.target.value);
   });
 
-  // Auxiliares para Salvamento
+  // --- LÓGICA DA MODAL DE DESENHAR NOVO SÍMBOLO CUSTOMIZADO ---
+  const createSymbolModal = document.getElementById('create-symbol-modal');
+  const closeCreateSymbolModal = document.getElementById('close-create-symbol-modal');
+  const btnCancelCustomSymbol = document.getElementById('btn-cancel-custom-symbol');
+  const btnSaveCustomSymbol = document.getElementById('btn-save-custom-symbol');
+  const btnClearDrawSymbol = document.getElementById('btn-clear-draw-symbol');
+  const customCanvas = document.getElementById('custom-symbol-canvas');
+  const newSymbolNameInput = document.getElementById('new-symbol-name');
+
+  let customCtx = customCanvas ? customCanvas.getContext('2d') : null;
+  let customRc = customCanvas ? rough.canvas(customCanvas) : null;
+  let isCustomDrawing = false;
+  let customDrawPoints = [];
+
+  function openCreateSymbolModal() {
+    newSymbolNameInput.value = '';
+    customDrawPoints = [];
+    clearCustomCanvas();
+    createSymbolModal.classList.remove('hidden');
+  }
+
+  function clearCustomCanvas() {
+    if (!customCtx) return;
+    customCtx.clearRect(0, 0, customCanvas.width, customCanvas.height);
+  }
+
+  function drawCustomStroke() {
+    clearCustomCanvas();
+    if (customDrawPoints.length < 2) return;
+    customCtx.beginPath();
+    customCtx.strokeStyle = '#10b981';
+    customCtx.lineWidth = 2;
+    customCtx.moveTo(customDrawPoints[0].x, customDrawPoints[0].y);
+    for (let i = 1; i < customDrawPoints.length; i++) {
+      customCtx.lineTo(customDrawPoints[i].x, customDrawPoints[i].y);
+    }
+    customCtx.stroke();
+  }
+
+  if (customCanvas) {
+    customCanvas.addEventListener('mousedown', (e) => {
+      isCustomDrawing = true;
+      const rect = customCanvas.getBoundingClientRect();
+      customDrawPoints.push({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+    });
+
+    customCanvas.addEventListener('mousemove', (e) => {
+      if (!isCustomDrawing) return;
+      const rect = customCanvas.getBoundingClientRect();
+      customDrawPoints.push({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+      drawCustomStroke();
+    });
+
+    window.addEventListener('mouseup', () => {
+      isCustomDrawing = false;
+    });
+
+    btnClearDrawSymbol.addEventListener('click', () => {
+      customDrawPoints = [];
+      clearCustomCanvas();
+    });
+  }
+
+  closeCreateSymbolModal.addEventListener('click', () => createSymbolModal.classList.add('hidden'));
+  btnCancelCustomSymbol.addEventListener('click', () => createSymbolModal.classList.add('hidden'));
+
+  btnSaveCustomSymbol.addEventListener('click', () => {
+    const name = newSymbolNameInput.value.trim();
+    if (!name) {
+      alert('Por favor, informe um nome para o seu símbolo.');
+      return;
+    }
+
+    if (customDrawPoints.length < 3) {
+      alert('Por favor, desenhe uma forma no quadro antes de salvar.');
+      return;
+    }
+
+    const xs = customDrawPoints.map(p => p.x);
+    const ys = customDrawPoints.map(p => p.y);
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minY = Math.min(...ys);
+    const maxY = Math.max(...ys);
+
+    const initialWidth = Math.max(maxX - minX, 20);
+    const initialHeight = Math.max(maxY - minY, 20);
+
+    const relativePoints = customDrawPoints.map(p => ({
+      dx: p.x - minX,
+      dy: p.y - minY
+    }));
+
+    const newCustomSymbol = {
+      id: `custom_${Date.now()}`,
+      name: name,
+      initialWidth: initialWidth,
+      initialHeight: initialHeight,
+      customPoints: relativePoints
+    };
+
+    Storage.saveCustomSymbol(newCustomSymbol);
+    createSymbolModal.classList.add('hidden');
+
+    renderSymbolsGrid();
+    symbolsModal.classList.remove('hidden');
+  });
+
+  // Auxiliares para Exportação
   async function saveWithSystemDialog(blob, defaultName, types) {
     if ('showSaveFilePicker' in window) {
       try {
@@ -249,7 +392,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Importar Projeto Abrindo em Nova Aba
+  // Importar Projeto
   const btnOpenFile = document.getElementById('btn-open-file');
   const inputImportFile = document.getElementById('input-import-file');
 
@@ -273,35 +416,14 @@ document.addEventListener('DOMContentLoaded', () => {
           alert('O arquivo selecionado não contém uma estrutura válida do DevFlow.');
         }
       } catch (err) {
-        alert('Erro ao carregar o arquivo .devflow. Certifique-se de que é um JSON válido.');
+        alert('Erro ao carregar o arquivo .devflow.');
       }
     };
     reader.readAsText(file);
     inputImportFile.value = '';
   });
 
-  // Atalhos de Teclado
-  window.addEventListener('keydown', (e) => {
-    if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
-
-    const keyToolMap = {
-      'h': 'hand',
-      'z': 'zoom',
-      's': 'select',
-      'p': 'pencil',
-      'w': 'auto-draw',
-      't': 'text',
-      'e': 'eraser'
-    };
-
-    const tool = keyToolMap[e.key.toLowerCase()];
-    if (tool && !(e.ctrlKey || e.metaKey)) {
-      const btn = document.querySelector(`.tool-btn[data-tool="${tool}"]`);
-      if (btn) btn.click();
-    }
-  });
-
-  // Limpar Aba Atual
+  // Limpar Aba
   document.getElementById('btn-new').addEventListener('click', () => {
     if (confirm('Tem certeza de que deseja apagar os elementos desta aba?')) {
       canvasMgr.clearCanvas();

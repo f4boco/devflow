@@ -5,11 +5,11 @@ class CanvasManager {
     this.ctx = this.canvas.getContext('2d');
     this.rc = rough.canvas(this.canvas);
 
-    // Carrega os elementos da aba ativa no LocalStorage
     const activeTabId = Storage.getActiveTabId();
     this.elements = Storage.loadTabData(activeTabId);
 
     this.currentTool = 'select';
+    this.customSymbolShape = null; // Guarda o símbolo customizado selecionado da biblioteca
     this.isDrawing = false;
     this.startX = 0;
     this.startY = 0;
@@ -42,7 +42,7 @@ class CanvasManager {
 
     this.init();
   }
-  
+
   init() {
     this.resize();
     window.addEventListener('resize', () => this.resize());
@@ -95,6 +95,7 @@ class CanvasManager {
 
   resetToSelectTool() {
     this.currentTool = 'select';
+    this.customSymbolShape = null;
     const toolButtons = document.querySelectorAll('.tool-btn');
     toolButtons.forEach(btn => {
       if (btn.dataset.tool === 'select') {
@@ -352,7 +353,6 @@ class CanvasManager {
     }
 
     if (this.currentTool === 'select') {
-      // 1. Verifica se clicou num handle de algum elemento selecionado
       const selectedElWithHandle = this.elements.find(el => el.selected && this.getHandleAtPoint(x, y, el));
       if (selectedElWithHandle) {
         const handleKey = this.getHandleAtPoint(x, y, selectedElWithHandle);
@@ -369,18 +369,14 @@ class CanvasManager {
         return;
       }
 
-      // 2. Busca o elemento clicado (do topo para o fundo)
       const clicked = [...this.elements].reverse().find(el => this.isPointInside(x, y, el));
 
       if (e.shiftKey) {
-        // MODO SELEÇÃO MÚLTIPLA (SHIFT PRESSIONADO)
         if (clicked) {
-          // Alterna a seleção do elemento (se já selecionado desmarca, se não, seleciona)
           clicked.selected = !clicked.selected;
           this.activeElement = clicked.selected ? clicked : null;
         }
       } else {
-        // MODO SELEÇÃO ÚNICA PADRÃO
         if (clicked) {
           if (!clicked.selected) {
             this.elements.forEach(el => el.selected = false);
@@ -388,7 +384,6 @@ class CanvasManager {
           }
           this.activeElement = clicked;
         } else {
-          // Clicou no vazio sem shift: limpa toda a seleção
           this.elements.forEach(el => el.selected = false);
           this.activeElement = null;
         }
@@ -400,14 +395,18 @@ class CanvasManager {
     }
 
     const startShape = [...this.elements].reverse().find(el => this.isPointInside(x, y, el) && !['line', 'arrow'].includes(el.type));
+    const customSymbol = this.customSymbolShape;
 
     this.activeElement = {
       id: Date.now(),
       type: this.currentTool,
       x: startShape ? (startShape.x + startShape.width / 2) : x,
       y: startShape ? (startShape.y + startShape.height / 2) : y,
-      width: 10,
-      height: 10,
+      width: customSymbol ? customSymbol.initialWidth : 10,
+      height: customSymbol ? customSymbol.initialHeight : 10,
+      initialWidth: customSymbol ? customSymbol.initialWidth : null,
+      initialHeight: customSymbol ? customSymbol.initialHeight : null,
+      customPoints: customSymbol ? customSymbol.customPoints : null,
       text: '',
       textAlign: this.currentTool === 'text' ? 'left' : 'center',
       waypoints: [],
@@ -458,10 +457,8 @@ class CanvasManager {
         const dy = e.movementY / this.zoom;
 
         if (this.activeHandle) {
-          // Redimensionamento individual por handle
           this.resizeElementWithHandle(this.activeElement, this.activeHandle, x, y);
         } else {
-          // Movimentação em Bloco de todos os elementos selecionados
           const selectedElements = this.elements.filter(el => el.selected);
           selectedElements.forEach(el => {
             el.x += dx;

@@ -1,7 +1,8 @@
 const Storage = {
   KEYS: {
     TABS: 'devflow_tabs_list',
-    ACTIVE_TAB: 'devflow_active_tab_id'
+    ACTIVE_TAB: 'devflow_active_tab_id',
+    CUSTOM_SYMBOLS: 'devflow_custom_symbols'
   },
 
   getTabs() {
@@ -52,7 +53,37 @@ const Storage = {
     localStorage.removeItem(`devflow_elements_${tabId}`);
   },
 
-  // Métodos de compatibilidade com o CanvasManager antigo
+  // --- MÉTODOS DE SÍMBOLOS CUSTOMIZADOS ---
+  getCustomSymbols() {
+    try {
+      const symbols = localStorage.getItem(this.KEYS.CUSTOM_SYMBOLS);
+      if (symbols) return JSON.parse(symbols);
+    } catch (e) {
+      console.error('Erro ao ler símbolos customizados:', e);
+    }
+    return [];
+  },
+
+  saveCustomSymbol(symbol) {
+    const list = this.getCustomSymbols();
+    list.push(symbol);
+    try {
+      localStorage.setItem(this.KEYS.CUSTOM_SYMBOLS, JSON.stringify(list));
+    } catch (e) {
+      console.error('Erro ao salvar símbolo customizado:', e);
+    }
+  },
+
+  deleteCustomSymbol(id) {
+    let list = this.getCustomSymbols();
+    list = list.filter(s => s.id !== id);
+    try {
+      localStorage.setItem(this.KEYS.CUSTOM_SYMBOLS, JSON.stringify(list));
+    } catch (e) {
+      console.error('Erro ao deletar símbolo customizado:', e);
+    }
+  },
+
   load() {
     return this.loadTabData(this.getActiveTabId());
   },
