@@ -52,6 +52,16 @@
 
   <!-- Universal Bottom Floating Toolbar -->
   <div class="fixed bottom-4 left-1/2 -translate-x-1/2 z-30 max-w-[96vw] bg-slate-900/90 backdrop-blur-md border border-slate-800 rounded-xl p-1.5 shadow-2xl flex items-center gap-1 overflow-x-auto scrollbar-none">
+    <!-- Botões de Histórico (Desfazer / Refazer) -->
+    <button id="btn-undo" class="p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-400 transition shrink-0 min-w-[38px] min-h-[38px] flex items-center justify-center" title="Desfazer (Ctrl+Z)">
+      <i data-lucide="undo-2" class="w-5 h-5"></i>
+    </button>
+    <button id="btn-redo" class="p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-400 transition shrink-0 min-w-[38px] min-h-[38px] flex items-center justify-center" title="Refazer (Ctrl+Y)">
+      <i data-lucide="redo-2" class="w-5 h-5"></i>
+    </button>
+
+    <div class="w-px h-6 bg-slate-800 mx-1 shrink-0"></div>
+
     <button data-tool="hand" class="tool-btn p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition shrink-0 min-w-[38px] min-h-[38px] flex items-center justify-center" title="Mão / Pan (H)">
       <i data-lucide="hand" class="w-5 h-5"></i>
     </button>

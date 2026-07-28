@@ -9,7 +9,7 @@ class CanvasManager {
     this.elements = Storage.loadTabData(activeTabId);
 
     this.currentTool = 'select';
-    this.customSymbolShape = null; // Guarda o símbolo customizado selecionado
+    this.customSymbolShape = null;
     this.isDrawing = false;
     this.startX = 0;
     this.startY = 0;
@@ -60,6 +60,7 @@ class CanvasManager {
       this.undoStack.push(currentState);
       this.redoStack = [];
     }
+    this.updateHistoryButtonsUI();
   }
 
   undo() {
@@ -69,6 +70,7 @@ class CanvasManager {
       this.elements = previousState;
       Storage.save(this.elements);
       this.render();
+      this.updateHistoryButtonsUI();
     }
   }
 
@@ -79,6 +81,19 @@ class CanvasManager {
       this.elements = JSON.parse(nextState);
       Storage.save(this.elements);
       this.render();
+      this.updateHistoryButtonsUI();
+    }
+  }
+
+  updateHistoryButtonsUI() {
+    const btnUndo = document.getElementById('btn-undo');
+    const btnRedo = document.getElementById('btn-redo');
+
+    if (btnUndo) {
+      btnUndo.disabled = this.undoStack.length <= 1;
+    }
+    if (btnRedo) {
+      btnRedo.disabled = this.redoStack.length === 0;
     }
   }
 
@@ -406,7 +421,7 @@ class CanvasManager {
       height: customSymbol ? customSymbol.initialHeight : 10,
       initialWidth: customSymbol ? customSymbol.initialWidth : null,
       initialHeight: customSymbol ? customSymbol.initialHeight : null,
-      customStrokes: customSymbol ? customSymbol.customStrokes : null, // Passa a lista COMPLETA de traços do símbolo
+      customStrokes: customSymbol ? customSymbol.customStrokes : null,
       customPoints: customSymbol ? customSymbol.customPoints : null,
       text: '',
       textAlign: this.currentTool === 'text' ? 'left' : 'center',

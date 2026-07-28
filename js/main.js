@@ -4,6 +4,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const canvasMgr = new CanvasManager('flowchart-canvas', 'workspace');
   const tabsMgr = new TabsManager(canvasMgr);
 
+  // Conectar botões de Desfazer e Refazer da barra de ferramentas flutuante
+  const btnUndo = document.getElementById('btn-undo');
+  const btnRedo = document.getElementById('btn-redo');
+
+  if (btnUndo) {
+    btnUndo.addEventListener('click', () => canvasMgr.undo());
+  }
+  if (btnRedo) {
+    btnRedo.addEventListener('click', () => canvasMgr.redo());
+  }
+
   const baseFlowchartSymbols = [
     { id: 'start-end', name: 'Terminador (Início/Fim)' },
     { id: 'process', name: 'Processo' },
