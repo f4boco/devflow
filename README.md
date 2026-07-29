@@ -61,19 +61,27 @@ Possibilidades de exportação: em *ASCII*, *Image* e *Arquivo editável*.
 
 ## ⌨️ Atalhos de Teclado
 
-| Atalho | Ação |
-| :--- | :--- |
-| <kbd>H</kbd> | Ferramenta Mão / Mover tela (Pan) |
-| <kbd>S</kbd> | Ferramenta Selecionar / Redimensionar |
-| <kbd>P</kbd> | Caneta Livre (Pencil) |
-| <kbd>W</kbd> | Auto-Ajuste de Formas (Smart Draw) |
-| <kbd>T</kbd> | Texto Livre |
-| <kbd>E</kbd> | Borracha |
-| <kbd>Ctrl</kbd> + <kbd>Z</kbd> | Desfazer (Undo) |
-| <kbd>Ctrl</kbd> + <kbd>Y</kbd> ou <kbd>Shift</kbd> + <kbd>Ctrl</kbd> + <kbd>Z</kbd> | Refazer (Redo) |
-| <kbd>Delete</kbd> ou <kbd>Backspace</kbd> | Excluir elemento selecionado |
-| <kbd>Enter</kbd> (no editor) | Salvar texto e fechar edição |
-| <kbd>Shift</kbd> + <kbd>Enter</kbd> | Quebrar linha dentro do texto |
+| Ação / Ferramenta | Atalho no Teclado |
+| :--- | :---: |
+| **Desfazer** | <kbd>Ctrl</kbd> + <kbd>Z</kbd> |
+| **Refazer** | <kbd>Ctrl</kbd> + <kbd>Y</kbd> ou <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Z</kbd> |
+| **Mão / Mover Tela (Pan)** | <kbd>H</kbd> |
+| **Ferramenta de Zoom** | <kbd>Z</kbd> |
+| **Seleção** | <kbd>V</kbd> ou <kbd>S</kbd> |
+| **Seleção Múltipla** | <kbd>Shift</kbd> + Clique |
+| **Início / Fim (Terminador)** | <kbd>O</kbd> |
+| **Processo (Retângulo)** | <kbd>R</kbd> |
+| **Entrada / Saída (I/O)** | <kbd>I</kbd> |
+| **Condição / Decisão (Losango)** | <kbd>D</kbd> |
+| **Biblioteca de Símbolos** | <kbd>Shift</kbd> + <kbd>S</kbd> |
+| **Linha de Fluxo** | <kbd>L</kbd> |
+| **Seta de Fluxo** | <kbd>A</kbd> |
+| **Caneta Livre** | <kbd>P</kbd> |
+| **Auto-Ajuste (Auto-Draw)** | <kbd>W</kbd> |
+| **Texto Livre** | <kbd>T</kbd> |
+| **Borracha** | <kbd>E</kbd> |
+| **Excluir Elemento(s) Selecionado(s)** | <kbd>Delete</kbd> ou <kbd>Backspace</kbd> |
+| **Renomear Aba** | Duplo clique na Aba |
 
 ## 🚀 Live Demo
 

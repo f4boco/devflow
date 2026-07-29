@@ -4,7 +4,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const canvasMgr = new CanvasManager('flowchart-canvas', 'workspace');
   const tabsMgr = new TabsManager(canvasMgr);
 
-  // Conectar botões de Desfazer e Refazer da barra de ferramentas flutuante
   const btnUndo = document.getElementById('btn-undo');
   const btnRedo = document.getElementById('btn-redo');
 
@@ -73,6 +72,45 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // Mapeamento Completo de Atalhos Globais no Teclado
+  window.addEventListener('keydown', (e) => {
+    // Se o usuário estiver digitando em uma caixa de texto, ignora atalhos de ferramentas
+    if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+
+    // Atalho Shift + S abre a Biblioteca de Símbolos
+    if (e.shiftKey && e.key.toLowerCase() === 's') {
+      e.preventDefault();
+      const btnLib = document.getElementById('btn-symbol-library');
+      if (btnLib) btnLib.click();
+      return;
+    }
+
+    if (e.ctrlKey || e.metaKey) return; // Ignora combinações com Ctrl/Cmd
+
+    const keyToolMap = {
+      'h': 'hand',
+      'z': 'zoom',
+      'v': 'select',
+      's': 'select',
+      'o': 'start-end',
+      'r': 'process',
+      'i': 'input-output',
+      'd': 'condition',
+      'l': 'line',
+      'a': 'arrow',
+      'p': 'pencil',
+      'w': 'auto-draw',
+      't': 'text',
+      'e': 'eraser'
+    };
+
+    const tool = keyToolMap[e.key.toLowerCase()];
+    if (tool) {
+      const btn = document.querySelector(`.tool-btn[data-tool="${tool}"]`);
+      if (btn) btn.click();
+    }
+  });
+
   // Modal Biblioteca de Símbolos com Suporte a Símbolos Customizados
   const symbolsModal = document.getElementById('symbols-modal');
   const btnSymbolLibrary = document.getElementById('btn-symbol-library');
@@ -87,7 +125,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const allSymbols = [...baseFlowchartSymbols, ...customSymbols];
     const filtered = allSymbols.filter(s => s.name.toLowerCase().includes(filterText.toLowerCase()));
 
-    // Card em Destaque para "Criar Novo Símbolo"
     const createCard = document.createElement('button');
     createCard.className = 'p-3 rounded-lg border-2 border-dashed border-emerald-500/50 hover:border-emerald-400 bg-emerald-500/5 hover:bg-emerald-500/10 text-left transition flex items-center gap-3 group shrink-0';
     createCard.innerHTML = `
