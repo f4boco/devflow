@@ -1,7 +1,7 @@
 /**
  * ASCIIConverter - Conversor cartesiano 2D fidedigno para ASCII Art.
- * Mapeia formas ISO, conectores ortogonais e formas customizadas
- * desenhadas à mão para uma matriz de caracteres monoespaçada.
+ * Suporta padding interno automático, mapeamento de símbolos ISO,
+ * preservação total de textos nas extremidades e formas customizadas.
  */
 const ASCIIConverter = {
   generate(elements) {
@@ -13,7 +13,11 @@ const ASCIIConverter = {
     const CHAR_W = 10;
     const CHAR_H = 20;
 
-    // 1. Calcular os limites do desenho no Canvas
+    // PADDING INTERNO PADRÃO (em número de caracteres/linhas na matriz ASCII)
+    const PADDING_X = 2; // Espaço em caracteres de cada lado do texto
+    const PADDING_Y = 0; // Espaço em linhas acima e abaixo do texto
+
+    // 1. Calcular os limites do desenho no Canvas estendendo para garantir padding
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
 
     elements.forEach(el => {
@@ -33,16 +37,15 @@ const ASCIIConverter = {
       }
     });
 
-    const paddingX = 20;
-    const paddingY = 20;
-    minX -= paddingX;
-    minY -= paddingY;
-    maxX += paddingX;
-    maxY += paddingY;
+    const marginCanvas = 30;
+    minX -= marginCanvas;
+    minY -= marginCanvas;
+    maxX += marginCanvas;
+    maxY += marginCanvas;
 
     // 2. Mapear dimensão do canvas para tamanho da matriz em caracteres
-    const cols = Math.max(Math.ceil((maxX - minX) / CHAR_W), 30);
-    const rows = Math.max(Math.ceil((maxY - minY) / CHAR_H), 15);
+    const cols = Math.max(Math.ceil((maxX - minX) / CHAR_W), 35);
+    const rows = Math.max(Math.ceil((maxY - minY) / CHAR_H), 18);
 
     const toCol = (x) => Math.floor((x - minX) / CHAR_W);
     const toRow = (y) => Math.floor((y - minY) / CHAR_H);
@@ -65,12 +68,36 @@ const ASCIIConverter = {
     const shapes = elements.filter(el => !['line', 'arrow'].includes(el.type));
     const connectors = elements.filter(el => ['line', 'arrow'].includes(el.type));
 
-    // 3. Renderizar Símbolos Padrão e Customizados na Matriz
+    // 3. Renderizar Símbolos com Padding e Proteção de Texto
     shapes.forEach(el => {
-      const c1 = toCol(el.x);
-      const r1 = toRow(el.y);
-      const c2 = Math.max(toCol(el.x + el.width), c1 + 4);
-      const r2 = Math.max(toRow(el.y + el.height), r1 + 2);
+      const lines = el.text ? el.text.split('\n') : [];
+      
+      // Encontra a maior linha de texto para calcular o padding exato
+      let maxLineLength = 0;
+      lines.forEach(l => {
+        if (l.length > maxLineLength) maxLineLength = l.length;
+      });
+
+      let c1 = toCol(el.x);
+      let r1 = toRow(el.y);
+      let c2 = toCol(el.x + el.width);
+      let r2 = toRow(el.y + el.height);
+
+      // Garante que o bloco ASCII seja grande o suficiente para conter o texto + PADDING_X
+      const requiredWidth = maxLineLength > 0 ? maxLineLength + (PADDING_X * 2) + 2 : 4;
+      const requiredHeight = lines.length > 0 ? lines.length + (PADDING_Y * 2) + 2 : 3;
+
+      if ((c2 - c1) < requiredWidth) {
+        const diff = requiredWidth - (c2 - c1);
+        c1 = Math.max(0, c1 - Math.floor(diff / 2));
+        c2 = c1 + requiredWidth;
+      }
+
+      if ((r2 - r1) < requiredHeight) {
+        const diff = requiredHeight - (r2 - r1);
+        r1 = Math.max(0, r1 - Math.floor(diff / 2));
+        r2 = r1 + requiredHeight;
+      }
 
       const widthCols = c2 - c1;
 
@@ -165,7 +192,7 @@ const ASCIIConverter = {
             break;
 
           case 'text':
-            // Texto Livre - não desenha nenhuma moldura
+            // Texto Livre sem moldura
             break;
 
           default:
@@ -179,21 +206,21 @@ const ASCIIConverter = {
         }
       }
 
-      // Inserir o Texto do Elemento Centralizado
-      if (el.text && el.text.trim().length > 0) {
-        const lines = el.text.split('\n');
+      // 4. Escrever o Texto Garantindo Espaçamento e Proteção nas Pontas
+      if (lines.length > 0) {
         const boxInnerHeight = r2 - r1 - 1;
-        const boxInnerWidth = widthCols - 2;
+        const availableWidth = widthCols - 2 - (PADDING_X * 2);
 
         const startR = Math.max(r1 + 1, r1 + 1 + Math.floor((boxInnerHeight - lines.length) / 2));
 
         lines.forEach((line, idx) => {
           const targetR = startR + idx;
           if (targetR > r1 && targetR < r2) {
-            const cleanLine = line.substring(0, Math.max(1, boxInnerWidth));
-            let startC = c1 + 1 + Math.floor((boxInnerWidth - cleanLine.length) / 2);
-            if (el.textAlign === 'left') startC = c1 + 2;
-            if (el.textAlign === 'right') startC = c2 - cleanLine.length - 1;
+            const cleanLine = line.substring(0, Math.max(1, availableWidth + PADDING_X));
+            
+            let startC = c1 + 1 + PADDING_X + Math.floor((availableWidth - cleanLine.length) / 2);
+            if (el.textAlign === 'left') startC = c1 + 1 + PADDING_X;
+            if (el.textAlign === 'right') startC = c2 - 1 - PADDING_X - cleanLine.length;
 
             writeString(targetR, Math.max(c1 + 1, startC), cleanLine);
           }
@@ -201,7 +228,7 @@ const ASCIIConverter = {
       }
     });
 
-    // 4. Renderizar Linhas e Setas de Conexão
+    // 5. Renderizar Conectores e Setas
     connectors.forEach(el => {
       const waypoints = ShapeRenderer.getLineWaypoints(el, elements);
       if (waypoints.length < 2) return;
@@ -247,7 +274,7 @@ const ASCIIConverter = {
         }
       }
 
-      // Adicionar cabeça de seta
+      // Ponta da Seta
       if (el.type === 'arrow' && waypoints.length >= 2) {
         const pPrev = waypoints[waypoints.length - 2];
         const pLast = waypoints[waypoints.length - 1];
@@ -268,7 +295,7 @@ const ASCIIConverter = {
       }
     });
 
-    // 5. Converter a matriz para string final
+    // 6. Limpar e retornar resultado final
     return grid
       .map(row => row.join('').replace(/\s+$/, ''))
       .filter((row, idx, arr) => {
