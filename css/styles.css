@@ -4,7 +4,7 @@
 
 /* Reset de Box Sizing para consistência de layout */
 *, ::before, ::after {
-  box-sizing: border-border-box;
+  box-sizing: border-box;
 }
 
 /* Ocultar Barras de Rolagem Nativas (Scrollbar) mantendo a rolagem funcional */
@@ -61,8 +61,18 @@
   tab-size: 2;
 }
 
-/* Prevenção de seleção acidental durante gestos e arrastes na lousa */
+/* ==========================================================================
+   FUNDO PONTILHADO (DOT GRID BACKGROUND)
+   ========================================================================== */
+#workspace {
+  background-color: #020617; /* Slate 950 */
+  background-image: radial-gradient(rgba(148, 163, 184, 0.18) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Canvas Transparente para exibir os pontos do fundo */
 #workspace canvas {
+  background-color: transparent !important;
   touch-action: none;
   -webkit-touch-callout: none;
   -webkit-user-select: none;
