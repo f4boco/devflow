@@ -409,16 +409,38 @@ class CanvasManager {
       return;
     }
 
-    const startShape = [...this.elements].reverse().find(el => this.isPointInside(x, y, el) && !['line', 'arrow'].includes(el.type));
+    // Busca elemento inicial (forma OU linha/seta existente)
+    const startTarget = [...this.elements].reverse().find(el => this.isPointInside(x, y, el));
     const customSymbol = this.customSymbolShape;
+
+    // Se estiver desenhando uma Linha ou Seta, inicia EXATAMENTE no ponto do clique do mouse para ser 100% natural
+    let initX = x;
+    let initY = y;
+
+    let startSegIdx = null;
+    let startRatioVal = null;
+
+    if (startTarget && ['line', 'arrow'].includes(this.currentTool)) {
+      if (['line', 'arrow'].includes(startTarget.type)) {
+        const info = ShapeRenderer.findClosestSegmentAndRatio({ x, y }, startTarget, this.elements);
+        initX = info.point.x;
+        initY = info.point.y;
+        startSegIdx = info.segmentIndex;
+        startRatioVal = info.ratio;
+      } else {
+        // Usa as coordenadas exatas do clique na borda/área da forma
+        initX = x;
+        initY = y;
+      }
+    }
 
     this.activeElement = {
       id: Date.now(),
       type: this.currentTool,
-      x: startShape ? (startShape.x + startShape.width / 2) : x,
-      y: startShape ? (startShape.y + startShape.height / 2) : y,
-      width: customSymbol ? customSymbol.initialWidth : 10,
-      height: customSymbol ? customSymbol.initialHeight : 10,
+      x: initX,
+      y: initY,
+      width: customSymbol ? customSymbol.initialWidth : 0,
+      height: customSymbol ? customSymbol.initialHeight : 0,
       initialWidth: customSymbol ? customSymbol.initialWidth : null,
       initialHeight: customSymbol ? customSymbol.initialHeight : null,
       customStrokes: customSymbol ? customSymbol.customStrokes : null,
@@ -426,8 +448,12 @@ class CanvasManager {
       text: '',
       textAlign: this.currentTool === 'text' ? 'left' : 'center',
       waypoints: [],
-      startConnectedTo: startShape ? startShape.id : null,
-      endConnectedTo: null
+      startConnectedTo: startTarget ? startTarget.id : null,
+      startSegmentIndex: startSegIdx,
+      startRatio: startRatioVal,
+      endConnectedTo: null,
+      endSegmentIndex: null,
+      endRatio: null
     };
   }
 
@@ -489,8 +515,8 @@ class CanvasManager {
         }
         this.requestRender();
       } else {
-        this.activeElement.width = x - this.startX;
-        this.activeElement.height = y - this.startY;
+        this.activeElement.width = x - this.activeElement.x;
+        this.activeElement.height = y - this.activeElement.y;
         this.requestRender();
       }
     }
@@ -500,10 +526,14 @@ class CanvasManager {
     if (['line', 'arrow'].includes(el.type)) {
       if (handle === 'start') {
         el.startConnectedTo = null;
+        el.startSegmentIndex = null;
+        el.startRatio = null;
         el.x = x;
         el.y = y;
       } else if (handle === 'end') {
         el.endConnectedTo = null;
+        el.endSegmentIndex = null;
+        el.endRatio = null;
         el.width = x - el.x;
         el.height = y - el.y;
       } else if (handle.startsWith('waypoint_')) {
@@ -609,13 +639,22 @@ class CanvasManager {
         const endY = this.activeElement.y + this.activeElement.height;
 
         if (['line', 'arrow'].includes(this.activeElement.type)) {
-          const endShape = [...this.elements].reverse().find(el => 
-            this.isPointInside(endX, endY, el) && !['line', 'arrow'].includes(el.type) && el.id !== this.activeElement.startConnectedTo
+          const endTarget = [...this.elements].reverse().find(el => 
+            this.isPointInside(endX, endY, el) && el.id !== this.activeElement.id && el.id !== this.activeElement.startConnectedTo
           );
-          if (endShape) {
-            this.activeElement.endConnectedTo = endShape.id;
-            this.activeElement.width = (endShape.x + endShape.width / 2) - this.activeElement.x;
-            this.activeElement.height = (endShape.y + endShape.height / 2) - this.activeElement.y;
+
+          if (endTarget) {
+            this.activeElement.endConnectedTo = endTarget.id;
+            if (['line', 'arrow'].includes(endTarget.type)) {
+              const info = ShapeRenderer.findClosestSegmentAndRatio({ x: endX, y: endY }, endTarget, this.elements);
+              this.activeElement.endSegmentIndex = info.segmentIndex;
+              this.activeElement.endRatio = info.ratio;
+              this.activeElement.width = info.point.x - this.activeElement.x;
+              this.activeElement.height = info.point.y - this.activeElement.y;
+            } else {
+              this.activeElement.width = endX - this.activeElement.x;
+              this.activeElement.height = endY - this.activeElement.y;
+            }
           }
         } else {
           if (this.activeElement.width < 0) {
@@ -649,13 +688,27 @@ class CanvasManager {
           ? { x: this.activeElement.x, y: this.activeElement.y }
           : { x: this.activeElement.x + this.activeElement.width, y: this.activeElement.y + this.activeElement.height };
 
-        const targetShape = [...this.elements].reverse().find(el => 
-          this.isPointInside(handlePt.x, handlePt.y, el) && !['line', 'arrow'].includes(el.type)
+        const target = [...this.elements].reverse().find(el => 
+          this.isPointInside(handlePt.x, handlePt.y, el) && el.id !== this.activeElement.id
         );
 
-        if (targetShape) {
-          if (this.activeHandle === 'start') this.activeElement.startConnectedTo = targetShape.id;
-          if (this.activeHandle === 'end') this.activeElement.endConnectedTo = targetShape.id;
+        if (target) {
+          if (this.activeHandle === 'start') {
+            this.activeElement.startConnectedTo = target.id;
+            if (['line', 'arrow'].includes(target.type)) {
+              const info = ShapeRenderer.findClosestSegmentAndRatio(handlePt, target, this.elements);
+              this.activeElement.startSegmentIndex = info.segmentIndex;
+              this.activeElement.startRatio = info.ratio;
+            }
+          }
+          if (this.activeHandle === 'end') {
+            this.activeElement.endConnectedTo = target.id;
+            if (['line', 'arrow'].includes(target.type)) {
+              const info = ShapeRenderer.findClosestSegmentAndRatio(handlePt, target, this.elements);
+              this.activeElement.endSegmentIndex = info.segmentIndex;
+              this.activeElement.endRatio = info.ratio;
+            }
+          }
         }
       }
 

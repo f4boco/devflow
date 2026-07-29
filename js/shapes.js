@@ -1,4 +1,4 @@
-// Renderização das formas Hand-Drawn via Rough.js com Suporte a Zoom, Alinhamento, Símbolos Customizados e Performance Touch
+// Renderização das formas Hand-Drawn via Rough.js com Suporte a Zoom, Alinhamento e Ancoragem Relativa (%) em Linhas
 const ShapeRenderer = {
   draw(rc, ctx, shape, elements = [], isInteracting = false) {
     const roughness = isInteracting ? 0.4 : 1.2;
@@ -46,7 +46,6 @@ const ShapeRenderer = {
     } else if (type === 'text') {
       // Texto livre sem moldura
     } else if (customStrokes && customStrokes.length > 0) {
-      // Renderiza TODOS os traços do símbolo customizado com escala proporcional
       const scaleX = initialWidth ? w / initialWidth : 1;
       const scaleY = initialHeight ? h / initialHeight : 1;
 
@@ -57,7 +56,6 @@ const ShapeRenderer = {
         }
       });
     } else if (customPoints && customPoints.length > 1) {
-      // Traço único (fallback)
       const scaleX = initialWidth ? w / initialWidth : 1;
       const scaleY = initialHeight ? h / initialHeight : 1;
       const scaledPoints = customPoints.map(p => [x + p.dx * scaleX, y + p.dy * scaleY]);
@@ -213,12 +211,6 @@ const ShapeRenderer = {
           rc.path(`M ${x + 15} ${y} L ${x} ${y} L ${x} ${y + h} L ${x + 15} ${y + h}`, options);
           break;
 
-        case 'network-interface':
-        case 'communication':
-        case 'data-transmission':
-          rc.polygon([[x, y + h / 2], [x + w * 0.3, y], [x + w * 0.3, y + h * 0.35], [x + w, y + h * 0.35], [x + w, y + h * 0.65], [x + w * 0.3, y + h * 0.65], [x + w * 0.3, y + h]], options);
-          break;
-
         case 'pencil':
           if (points && points.length > 1) {
             const scaleX = initialWidth ? w / initialWidth : 1;
@@ -263,7 +255,12 @@ const ShapeRenderer = {
     }
   },
 
-  getLineWaypoints(shape, elements = []) {
+  getLineWaypoints(shape, elements = [], visited = new Set()) {
+    if (visited.has(shape.id)) {
+      return [{ x: shape.x, y: shape.y }, { x: shape.x + shape.width, y: shape.y + shape.height }];
+    }
+    visited.add(shape.id);
+
     const startShape = elements.find(el => el.id === shape.startConnectedTo);
     const endShape = elements.find(el => el.id === shape.endConnectedTo);
 
@@ -273,19 +270,89 @@ const ShapeRenderer = {
     const pNext = waypoints.length > 0 ? waypoints[0] : { x: shape.x + shape.width, y: shape.y + shape.height };
 
     if (startShape) {
-      const startCenter = { x: startShape.x + startShape.width / 2, y: startShape.y + startShape.height / 2 };
-      pStart = this.getEdgeIntersection(startCenter, pNext, startShape);
+      if (['line', 'arrow'].includes(startShape.type)) {
+        pStart = this.getPointAtRatio(startShape, shape.startSegmentIndex, shape.startRatio, elements, visited, pNext);
+      } else {
+        const startCenter = { x: startShape.x + startShape.width / 2, y: startShape.y + startShape.height / 2 };
+        pStart = this.getEdgeIntersection(startCenter, pNext, startShape);
+      }
     }
 
     let pEnd = { x: shape.x + shape.width, y: shape.y + shape.height };
     const pPrev = waypoints.length > 0 ? waypoints[waypoints.length - 1] : pStart;
 
     if (endShape) {
-      const endCenter = { x: endShape.x + endShape.width / 2, y: endShape.y + endShape.height / 2 };
-      pEnd = this.getEdgeIntersection(endCenter, pPrev, endShape);
+      if (['line', 'arrow'].includes(endShape.type)) {
+        pEnd = this.getPointAtRatio(endShape, shape.endSegmentIndex, shape.endRatio, elements, visited, pPrev);
+      } else {
+        const endCenter = { x: endShape.x + endShape.width / 2, y: endShape.y + endShape.height / 2 };
+        pEnd = this.getEdgeIntersection(endCenter, pPrev, endShape);
+      }
     }
 
     return [pStart, ...waypoints, pEnd];
+  },
+
+  // Recalcula o ponto baseado no índice do segmento e na proporção percentual exata (0 a 1)
+  getPointAtRatio(targetLine, segmentIndex, ratio, elements, visited, fallbackPoint) {
+    const waypoints = this.getLineWaypoints(targetLine, elements, visited);
+    
+    if (segmentIndex !== undefined && segmentIndex !== null && ratio !== undefined && ratio !== null) {
+      const idx = Math.min(Math.max(0, segmentIndex), waypoints.length - 2);
+      const p1 = waypoints[idx];
+      const p2 = waypoints[idx + 1];
+
+      if (p1 && p2) {
+        return {
+          x: p1.x + (p2.x - p1.x) * ratio,
+          y: p1.y + (p2.y - p1.y) * ratio
+        };
+      }
+    }
+
+    // Fallback caso ainda não exista um raio calculado
+    const info = this.findClosestSegmentAndRatio(fallbackPoint, targetLine, elements, visited);
+    return info.point;
+  },
+
+  // Função utilitária para calcular segmento e proporção (ratio) no momento do clique/soltura
+  findClosestSegmentAndRatio(point, targetLine, elements, visited = new Set()) {
+    const waypoints = this.getLineWaypoints(targetLine, elements, visited);
+    let minDistance = Infinity;
+    let bestSegment = 0;
+    let bestRatio = 0.5;
+    let bestPoint = { x: targetLine.x, y: targetLine.y };
+
+    for (let i = 0; i < waypoints.length - 1; i++) {
+      const p1 = waypoints[i];
+      const p2 = waypoints[i + 1];
+
+      const dx = p2.x - p1.x;
+      const dy = p2.y - p1.y;
+      const lenSq = dx * dx + dy * dy;
+
+      let t = 0.5;
+      if (lenSq > 0) {
+        t = ((point.x - p1.x) * dx + (point.y - p1.y) * dy) / lenSq;
+        t = Math.max(0, Math.min(1, t));
+      }
+
+      const proj = { x: p1.x + t * dx, y: p1.y + t * dy };
+      const dist = Math.hypot(point.x - proj.x, point.y - proj.y);
+
+      if (dist < minDistance) {
+        minDistance = dist;
+        bestSegment = i;
+        bestRatio = t;
+        bestPoint = proj;
+      }
+    }
+
+    return {
+      segmentIndex: bestSegment,
+      ratio: bestRatio,
+      point: bestPoint
+    };
   },
 
   drawHandles(ctx, shape, elements = []) {
