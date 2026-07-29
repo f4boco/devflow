@@ -14,6 +14,47 @@ document.addEventListener('DOMContentLoaded', () => {
     btnRedo.addEventListener('click', () => canvasMgr.redo());
   }
 
+  // --- HABILITAR ROLAGEM COM O MOUSE NA BARRA DE FERRAMENTAS FLUTUANTE (DESKTOP) ---
+  const floatingToolbar = document.querySelector('.fixed.bottom-4');
+
+  if (floatingToolbar) {
+    // 1. Rolagem com a Roda do Mouse (Wheel Scroll)
+    floatingToolbar.addEventListener('wheel', (e) => {
+      if (e.deltaY !== 0) {
+        e.preventDefault();
+        floatingToolbar.scrollLeft += e.deltaY;
+      }
+    }, { passive: false });
+
+    // 2. Arrastar com o Clique do Mouse (Click & Drag to Scroll)
+    let isMouseDown = false;
+    let startX;
+    let scrollLeft;
+
+    floatingToolbar.addEventListener('mousedown', (e) => {
+      // Se clicou direto em um botão de ferramenta, não inicia o drag da barra
+      if (e.target.closest('button')) return;
+
+      isMouseDown = true;
+      floatingToolbar.classList.add('drag-scroll-active');
+      startX = e.pageX - floatingToolbar.offsetLeft;
+      scrollLeft = floatingToolbar.scrollLeft;
+    });
+
+    window.addEventListener('mouseup', () => {
+      isMouseDown = false;
+      floatingToolbar.classList.remove('drag-scroll-active');
+    });
+
+    floatingToolbar.addEventListener('mousemove', (e) => {
+      if (!isMouseDown) return;
+      e.preventDefault();
+      const x = e.pageX - floatingToolbar.offsetLeft;
+      const walk = (x - startX) * 1.5; // Velocidade do arraste
+      floatingToolbar.scrollLeft = scrollLeft - walk;
+    });
+  }
+
   const baseFlowchartSymbols = [
     { id: 'start-end', name: 'Terminador (Início/Fim)' },
     { id: 'process', name: 'Processo' },
@@ -74,10 +115,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Mapeamento Completo de Atalhos Globais no Teclado
   window.addEventListener('keydown', (e) => {
-    // Se o usuário estiver digitando em uma caixa de texto, ignora atalhos de ferramentas
     if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
 
-    // Atalho Shift + S abre a Biblioteca de Símbolos
     if (e.shiftKey && e.key.toLowerCase() === 's') {
       e.preventDefault();
       const btnLib = document.getElementById('btn-symbol-library');
@@ -85,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    if (e.ctrlKey || e.metaKey) return; // Ignora combinações com Ctrl/Cmd
+    if (e.ctrlKey || e.metaKey) return;
 
     const keyToolMap = {
       'h': 'hand',

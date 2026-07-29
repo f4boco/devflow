@@ -1,17 +1,13 @@
-/* Custom Canvas background grid pattern */
-#workspace {
-  background-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 0);
-  background-size: 20px 20px;
+/* ==========================================================================
+   DevFlow - Estilos Globais e Customizações
+   ========================================================================== */
+
+/* Reset de Box Sizing para consistência de layout */
+*, ::before, ::after {
+  box-sizing: border-border-box;
 }
 
-/* Tool selection active state */
-.tool-btn.active-tool {
-  background-color: rgba(16, 185, 129, 0.18);
-  color: #10b981;
-  border: 1px solid rgba(16, 185, 129, 0.4);
-}
-
-/* Esconde barras de rolagem na barra de ferramentas para um visual nativo */
+/* Ocultar Barras de Rolagem Nativas (Scrollbar) mantendo a rolagem funcional */
 .scrollbar-none::-webkit-scrollbar {
   display: none;
 }
@@ -20,21 +16,55 @@
   scrollbar-width: none;
 }
 
-/* Personalização global de scrollbars */
+/* Estilização customizada da Scrollbar para modais e áreas de código */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #020617;
+  background: #020617; /* slate-950 */
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1e293b;
-  border-radius: 3px;
+  background: #1e293b; /* slate-800 */
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: #10b981; /* emerald-500 */
+}
+
+/* Estado Ativo das Ferramentas da Toolbar Flutuante */
+.active-tool {
+  background-color: #1e293b !important; /* slate-800 */
+  color: #10b981 !important; /* emerald-400 */
+  border: 1px solid rgba(16, 185, 129, 0.4) !important;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.15);
+}
+
+/* Cursor para Rolagem de Arraste (Drag-to-Scroll) no Desktop */
+.drag-scroll-active {
+  cursor: grabbing !important;
+  user-select: none !important;
+}
+
+/* Animações e Transições Suaves */
+.transition-fast {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Estilo para a caixa de edição de texto overlay no Canvas */
+#text-editor-container textarea {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  line-height: 1.4;
+  tab-size: 2;
+}
+
+/* Prevenção de seleção acidental durante gestos e arrastes na lousa */
+#workspace canvas {
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
