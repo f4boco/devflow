@@ -35,6 +35,9 @@ class CanvasManager {
     this.initialPinchDistance = null;
     this.initialPinchZoom = 1.0;
 
+    // Clipboard Interno para Copiar/Colar/Recortar/Duplicar
+    this.clipboard = [];
+
     // Histórico para Undo/Redo
     this.undoStack = [];
     this.redoStack = [];
@@ -106,6 +109,86 @@ class CanvasManager {
       this.saveHistory();
       this.render();
     }
+  }
+
+  // --- OPERAÇÕES DE CLIPBOARD (COPIAR, COLAR, RECORTAR, DUPLICAR) ---
+
+  copySelected() {
+    const selected = this.elements.filter(el => el.selected);
+    if (selected.length === 0) return;
+
+    // Guarda uma cópia profunda dos elementos selecionados no clipboard
+    this.clipboard = JSON.parse(JSON.stringify(selected));
+  }
+
+  cutSelected() {
+    this.copySelected();
+    this.deleteSelected();
+  }
+
+  pasteClipboard() {
+    if (!this.clipboard || this.clipboard.length === 0) return;
+
+    // Dicionário para mapear os IDs antigos para os novos IDs clonados
+    const idMap = {};
+    const offset = 20; // Deslocamento visual ao colar
+
+    // Desmarca todos os elementos atualmente presentes na tela
+    this.elements.forEach(el => el.selected = false);
+
+    // 1º passo: Clona os elementos, gera novos IDs e aplica o deslocamento
+    const newClones = this.clipboard.map((item, index) => {
+      const newId = Date.now() + index + Math.floor(Math.random() * 1000);
+      idMap[item.id] = newId;
+
+      const newItem = JSON.parse(JSON.stringify(item));
+      newItem.id = newId;
+      newItem.selected = true;
+
+      // Ajusta posição x, y
+      newItem.x += offset;
+      newItem.y += offset;
+
+      // Ajusta waypoints se existirem
+      if (newItem.waypoints && Array.isArray(newItem.waypoints)) {
+        newItem.waypoints.forEach(wp => {
+          wp.x += offset;
+          wp.y += offset;
+        });
+      }
+
+      return newItem;
+    });
+
+    // 2º passo: Atualiza referências de conexões (se formas conectadas foram copiadas juntas)
+    newClones.forEach(item => {
+      if (['line', 'arrow'].includes(item.type)) {
+        if (item.startConnectedTo && idMap[item.startConnectedTo]) {
+          item.startConnectedTo = idMap[item.startConnectedTo];
+        } else {
+          item.startConnectedTo = null;
+        }
+
+        if (item.endConnectedTo && idMap[item.endConnectedTo]) {
+          item.endConnectedTo = idMap[item.endConnectedTo];
+        } else {
+          item.endConnectedTo = null;
+        }
+      }
+    });
+
+    // Adiciona os novos elementos ao canvas e atualiza o clipboard para permit ir múltiplos colares seguidos com offset
+    this.elements.push(...newClones);
+    this.clipboard = JSON.parse(JSON.stringify(newClones));
+
+    Storage.save(this.elements);
+    this.saveHistory();
+    this.render();
+  }
+
+  duplicateSelected() {
+    this.copySelected();
+    this.pasteClipboard();
   }
 
   resetToSelectTool() {
@@ -219,6 +302,28 @@ class CanvasManager {
       if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
 
       const isCtrlOrCmd = e.ctrlKey || e.metaKey;
+      const keyLower = e.key.toLowerCase();
+
+      // Atalhos do Clipboard (Ctrl/Cmd + C, V, X, D)
+      if (isCtrlOrCmd) {
+        if (keyLower === 'c') {
+          e.preventDefault();
+          this.copySelected();
+          return;
+        } else if (keyLower === 'v') {
+          e.preventDefault();
+          this.pasteClipboard();
+          return;
+        } else if (keyLower === 'x') {
+          e.preventDefault();
+          this.cutSelected();
+          return;
+        } else if (keyLower === 'd') {
+          e.preventDefault();
+          this.duplicateSelected();
+          return;
+        }
+      }
 
       if ((e.shiftKey && (e.key === '!' || e.key === '1')) || e.key === '0') {
         e.preventDefault();
@@ -226,7 +331,7 @@ class CanvasManager {
         return;
       }
 
-      if (isCtrlOrCmd && e.key.toLowerCase() === 'z') {
+      if (isCtrlOrCmd && keyLower === 'z') {
         if (e.shiftKey) {
           e.preventDefault();
           this.redo();
@@ -234,7 +339,7 @@ class CanvasManager {
           e.preventDefault();
           this.undo();
         }
-      } else if (isCtrlOrCmd && e.key.toLowerCase() === 'y') {
+      } else if (isCtrlOrCmd && keyLower === 'y') {
         e.preventDefault();
         this.redo();
       } else if (e.key === 'Delete' || e.key === 'Backspace') {
