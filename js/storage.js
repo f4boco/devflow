@@ -1,6 +1,7 @@
 const Storage = {
   KEYS: {
     TABS: 'devflow_tabs_list',
+    FOLDERS: 'devflow_folders_list',
     ACTIVE_TAB: 'devflow_active_tab_id',
     CUSTOM_SYMBOLS: 'devflow_custom_symbols'
   },
@@ -12,7 +13,7 @@ const Storage = {
     } catch (e) {
       console.error('Erro ao ler abas:', e);
     }
-    return [{ id: 'tab_default', name: 'Fluxograma 1' }];
+    return [{ id: 'tab_default', name: 'Fluxograma 1', folderId: null, zoom: 1.0, panX: 0, panY: 0 }];
   },
 
   saveTabs(tabs) {
@@ -20,6 +21,24 @@ const Storage = {
       localStorage.setItem(this.KEYS.TABS, JSON.stringify(tabs));
     } catch (e) {
       console.error('Erro ao salvar abas:', e);
+    }
+  },
+
+  getFolders() {
+    try {
+      const folders = localStorage.getItem(this.KEYS.FOLDERS);
+      if (folders) return JSON.parse(folders);
+    } catch (e) {
+      console.error('Erro ao ler pastas:', e);
+    }
+    return [];
+  },
+
+  saveFolders(folders) {
+    try {
+      localStorage.setItem(this.KEYS.FOLDERS, JSON.stringify(folders));
+    } catch (e) {
+      console.error('Erro ao salvar pastas:', e);
     }
   },
 

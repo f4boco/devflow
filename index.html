@@ -42,12 +42,20 @@
     </div>
   </header>
 
-  <!-- Sub-Barra de Abas -->
-  <div class="h-10 border-b border-slate-800/80 bg-slate-950/70 backdrop-blur px-3 flex items-center gap-2 z-10 shrink-0 overflow-x-auto scrollbar-none">
-    <div class="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-1" id="tabs-container"></div>
-    <button id="btn-add-tab" class="p-1.5 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition shrink-0 border border-slate-800/80 flex items-center justify-center ml-1" title="Nova Aba de Fluxograma">
-      <i data-lucide="plus" class="w-4 h-4"></i>
-    </button>
+  <!-- Sub-Barra de Navegação e Pastas/Abas -->
+  <div class="h-10 border-b border-slate-800/80 bg-slate-950/70 backdrop-blur px-3 flex items-center justify-between gap-2 z-20 shrink-0">
+    <div class="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-1 flex-1" id="tabs-container"></div>
+    
+    <div class="flex items-center gap-1 shrink-0 pl-2 border-l border-slate-800">
+      <button id="btn-add-folder" class="px-2 py-1 rounded hover:bg-slate-800 text-slate-400 hover:text-amber-400 transition text-xs flex items-center gap-1 border border-slate-800" title="Criar Nova Pasta">
+        <i data-lucide="folder-plus" class="w-3.5 h-3.5"></i>
+        <span class="hidden md:inline">Nova Pasta</span>
+      </button>
+      <button id="btn-add-tab" class="px-2 py-1 rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition text-xs flex items-center gap-1 border border-slate-800" title="Criar Novo Fluxograma Solto">
+        <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+        <span class="hidden md:inline">Novo Fluxograma</span>
+      </button>
+    </div>
   </div>
 
   <!-- Universal Bottom Floating Toolbar (Com Dicas de Atalhos) -->
@@ -127,7 +135,7 @@
 
     <!-- Indicador de Zoom -->
     <div class="absolute bottom-4 right-4 z-20">
-      <span id="zoom-level-text" class="text-xs font-mono text-slate-300 bg-slate-900/90 backdrop-blur-md border border-slate-800 px-3 py-1.5 rounded-lg shadow-lg select-none cursor-pointer hover:text-emerald-400 hover:border-emerald-500/40 transition block" title="Clique para resetar em 100%">100%</span>
+      <span id="zoom-level-text" class="text-xs font-mono text-slate-300 bg-slate-900/90 backdrop-blur-md border border-slate-800 px-3 py-1.5 rounded-lg shadow-lg select-none cursor-pointer hover:text-emerald-400 hover:border-emerald-500/40 transition block" title="Clique para resetar e enquadrar">100%</span>
     </div>
 
     <!-- Text Editor -->
