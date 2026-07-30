@@ -55,6 +55,14 @@ class CanvasManager {
     this.render();
   }
 
+  applyViewState(zoom, panX, panY) {
+    this.zoom = zoom !== undefined ? zoom : 1.0;
+    this.panX = panX !== undefined ? panX : 0;
+    this.panY = panY !== undefined ? panY : 0;
+    this.updateZoomDisplay();
+    this.render();
+  }
+
   saveHistory() {
     const currentState = JSON.stringify(this.elements);
     const lastState = this.undoStack[this.undoStack.length - 1];
@@ -177,7 +185,7 @@ class CanvasManager {
       }
     });
 
-    // Adiciona os novos elementos ao canvas e atualiza o clipboard para permit ir múltiplos colares seguidos com offset
+    // Adiciona os novos elementos ao canvas e atualiza o clipboard para permitir múltiplos colares seguidos com offset
     this.elements.push(...newClones);
     this.clipboard = JSON.parse(JSON.stringify(newClones));
 

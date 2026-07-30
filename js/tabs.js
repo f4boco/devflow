@@ -89,7 +89,14 @@ class TabsManager {
     const tabId = `tab_${Date.now()}`;
     const tabName = name || `Fluxograma ${this.tabs.length + 1}`;
 
-    const newTab = { id: tabId, name: tabName };
+    const newTab = { 
+      id: tabId, 
+      name: tabName,
+      zoom: 1.0,
+      panX: 0,
+      panY: 0
+    };
+
     this.tabs.push(newTab);
     Storage.saveTabs(this.tabs);
 
@@ -102,18 +109,36 @@ class TabsManager {
 
   switchTab(tabId, saveCurrent = true) {
     if (saveCurrent && this.activeTabId) {
+      // Salva os elementos da aba anterior
       Storage.saveTabData(this.activeTabId, this.canvasMgr.elements);
+
+      // Salva o Zoom e Pan específicos da aba anterior
+      const currentTab = this.tabs.find(t => t.id === this.activeTabId);
+      if (currentTab) {
+        currentTab.zoom = this.canvasMgr.zoom;
+        currentTab.panX = this.canvasMgr.panX;
+        currentTab.panY = this.canvasMgr.panY;
+        Storage.saveTabs(this.tabs);
+      }
     }
 
     this.activeTabId = tabId;
     Storage.setActiveTabId(tabId);
 
+    // Carrega os elementos da nova aba selecionada
     const loadedElements = Storage.loadTabData(tabId);
     this.canvasMgr.elements = loadedElements;
     this.canvasMgr.undoStack = [];
     this.canvasMgr.redoStack = [];
     this.canvasMgr.saveHistory();
-    this.canvasMgr.render();
+
+    // Restaura o Zoom e Pan salvos da nova aba selecionada (ou padrão se não houver)
+    const targetTab = this.tabs.find(t => t.id === tabId);
+    const savedZoom = targetTab && targetTab.zoom !== undefined ? targetTab.zoom : 1.0;
+    const savedPanX = targetTab && targetTab.panX !== undefined ? targetTab.panX : 0;
+    const savedPanY = targetTab && targetTab.panY !== undefined ? targetTab.panY : 0;
+
+    this.canvasMgr.applyViewState(savedZoom, savedPanX, savedPanY);
 
     this.renderTabs();
   }
