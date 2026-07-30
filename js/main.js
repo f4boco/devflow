@@ -14,6 +14,12 @@ document.addEventListener('DOMContentLoaded', () => {
     btnRedo.addEventListener('click', () => canvasMgr.redo());
   }
 
+  // --- CLIQUE NO INDICADOR DE ZOOM PARA CENTRALIZAR E ENQUADRAR ---
+  const zoomDisplayBtn = document.getElementById('zoom-level-text');
+  if (zoomDisplayBtn) {
+    zoomDisplayBtn.addEventListener('click', () => canvasMgr.zoomToFit());
+  }
+
   // --- HABILITAR ROLAGEM COM O MOUSE NA BARRA DE FERRAMENTAS FLUTUANTE (DESKTOP) ---
   const floatingToolbar = document.querySelector('.fixed.bottom-4');
 

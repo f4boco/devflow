@@ -136,6 +136,67 @@ class CanvasManager {
     this.requestRender();
   }
 
+  zoomToFit() {
+    if (!this.elements || this.elements.length === 0) {
+      this.zoom = 1.0;
+      this.panX = 0;
+      this.panY = 0;
+      this.updateZoomDisplay();
+      this.requestRender();
+      return;
+    }
+
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+
+    this.elements.forEach(el => {
+      if (['line', 'arrow'].includes(el.type)) {
+        const waypoints = ShapeRenderer.getLineWaypoints(el, this.elements);
+        waypoints.forEach(pt => {
+          if (pt.x < minX) minX = pt.x;
+          if (pt.y < minY) minY = pt.y;
+          if (pt.x > maxX) maxX = pt.x;
+          if (pt.y > maxY) maxY = pt.y;
+        });
+      } else {
+        if (el.x < minX) minX = el.x;
+        if (el.y < minY) minY = el.y;
+        if (el.x + el.width > maxX) maxX = el.x + el.width;
+        if (el.y + el.height > maxY) maxY = el.y + el.height;
+      }
+    });
+
+    const contentWidth = maxX - minX;
+    const contentHeight = maxY - minY;
+
+    if (contentWidth <= 0 || contentHeight <= 0) return;
+
+    const padding = 80;
+    const availableWidth = this.canvas.width - padding * 2;
+    const availableHeight = this.canvas.height - padding * 2;
+
+    const scaleX = availableWidth / contentWidth;
+    const scaleY = availableHeight / contentHeight;
+    let targetZoom = Math.min(scaleX, scaleY);
+
+    targetZoom = Math.min(Math.max(targetZoom, this.minZoom), this.maxZoom);
+
+    const contentCenterX = minX + contentWidth / 2;
+    const contentCenterY = minY + contentHeight / 2;
+
+    const canvasCenterX = this.canvas.width / 2;
+    const canvasCenterY = this.canvas.height / 2;
+
+    this.zoom = targetZoom;
+    this.panX = canvasCenterX - contentCenterX * targetZoom;
+    this.panY = canvasCenterY - contentCenterY * targetZoom;
+
+    this.updateZoomDisplay();
+    this.requestRender();
+  }
+
   updateZoomDisplay() {
     const zoomText = document.getElementById('zoom-level-text');
     if (zoomText) {
@@ -158,6 +219,12 @@ class CanvasManager {
       if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
 
       const isCtrlOrCmd = e.ctrlKey || e.metaKey;
+
+      if ((e.shiftKey && (e.key === '!' || e.key === '1')) || e.key === '0') {
+        e.preventDefault();
+        this.zoomToFit();
+        return;
+      }
 
       if (isCtrlOrCmd && e.key.toLowerCase() === 'z') {
         if (e.shiftKey) {

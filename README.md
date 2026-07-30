@@ -82,6 +82,7 @@ Possibilidades de exportação: em *ASCII*, *Image* e *Arquivo editável*.
 | **Borracha** | <kbd>E</kbd> |
 | **Excluir Elemento(s) Selecionado(s)** | <kbd>Delete</kbd> ou <kbd>Backspace</kbd> |
 | **Renomear Aba** | Duplo clique na Aba |
+| **Zoom to Fit / Reset Center** | <kbd>Shift</kbd> + <kbd>1</kbd> OU Clique no indicador de porcentagem de zoom no canto inferior direito|
 
 ## 🚀 Live Demo
 
